@@ -64,38 +64,20 @@ function History() {
   const chrono = [...all].reverse();
   const latest = chrono.slice(-2);
   const older = chrono.slice(0, -2);
-  const view = search.view ?? "podiums";
-  const tab = (active: boolean) =>
-    `rounded-full border-2 px-4 py-2 text-sm font-bold uppercase tracking-wider ${active ? "border-foreground bg-foreground text-background" : "bg-card hover:bg-muted"}`;
+  // The menu's History shows the banners and podiums; Team Lockers shows the lockers on their own
+  const lockers = search.view === "teams";
   return (
     <>
-      <Hero latest={latest} older={older} />
-      <main className="mx-auto max-w-6xl px-3 pb-16 sm:px-4">
-        <div className="my-6 flex flex-wrap gap-2" role="tablist">
-          <button
-            role="tab"
-            aria-selected={view === "podiums"}
-            className={tab(view === "podiums")}
-            onClick={() => navigate({ search: {}, replace: true })}
-          >
-            Podiums
-          </button>
-          <button
-            role="tab"
-            aria-selected={view === "teams"}
-            className={tab(view === "teams")}
-            onClick={() =>
-              navigate({ search: { view: "teams", ...(search.team && { team: search.team }) } })
-            }
-          >
-            Team lockers
-          </button>
-        </div>
-        {view === "teams" ? (
-          <Lockers
-            team={search.team}
-            onTeam={(team) => navigate({ search: { view: "teams", team }, replace: true })}
-          />
+      {!lockers && <Hero latest={latest} older={older} />}
+      <main className="mx-auto max-w-6xl px-3 pb-16 pt-6 sm:px-4">
+        {lockers ? (
+          <>
+            <h1 className="mb-4 text-4xl font-extrabold uppercase sm:text-5xl">Team lockers</h1>
+            <Lockers
+              team={search.team}
+              onTeam={(team) => navigate({ search: { view: "teams", team }, replace: true })}
+            />
+          </>
         ) : (
           <Podiums
             all={all}
@@ -776,9 +758,8 @@ function FinishChart({ rows }: { rows: Finish[] }) {
                 stroke="var(--color-card)"
                 strokeWidth="2"
               >
-                <title>
-                  {p.f.s} {KIND_NAME[p.f.k]}: {place(p.f)}, {p.f.p} pts
-                </title>
+                {/* one string: split text nodes in an SVG title don't hydrate */}
+                <title>{`${p.f.s} ${KIND_NAME[p.f.k]}: ${place(p.f)}, ${p.f.p} pts`}</title>
               </circle>
             ))}
           </g>

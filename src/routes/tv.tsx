@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { toast, Toaster } from "sonner";
 import { ConfirmButton } from "@/components/commissioner";
 import { OrderSheet } from "@/components/draft/order-sheet";
+import { TeamLogo } from "@/components/team-logo";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { msg, useIsCommissioner } from "@/hooks/use-commissioner";
 import { supabase } from "@/integrations/supabase/client";
@@ -190,9 +191,12 @@ function Board({ draft, players }: { draft: LiveDraft; players: PublicPlayer[] }
         <div className="text-lg font-bold uppercase tracking-wider opacity-90">
           {label} · pick #{n + 1}
         </div>
-        <div className="font-display text-5xl font-extrabold uppercase leading-tight xl:text-6xl">
-          {team(slot)}
-          {again && <span className="ml-3 align-middle text-2xl opacity-80">again</span>}
+        <div className="flex items-center gap-4 font-display text-5xl font-extrabold uppercase leading-tight xl:text-6xl">
+          <TeamLogo name={team(slot)} size={64} className="xl:h-20 xl:w-20" />
+          <span>
+            {team(slot)}
+            {again && <span className="ml-3 align-middle text-2xl opacity-80">again</span>}
+          </span>
         </div>
       </div>
     );
@@ -294,6 +298,7 @@ function Board({ draft, players }: { draft: LiveDraft; players: PublicPlayer[] }
                         className="w-full text-center text-[13px] font-bold leading-tight [overflow-wrap:anywhere] hover:underline 2xl:text-sm"
                         title={`See ${team(i + 1)}'s picks`}
                       >
+                        <TeamLogo name={team(i + 1)} size={30} className="mx-auto mb-1 block" />
                         {team(i + 1)}
                       </button>
                     </th>
@@ -353,7 +358,10 @@ function Board({ draft, players }: { draft: LiveDraft; players: PublicPlayer[] }
                       <span>
                         <b>{pl.name}</b> <span className="text-muted-foreground">{pl.meta}</span>
                         <br />
-                        <span className="text-muted-foreground">{team(slotForPick(i, T))}</span>
+                        <span className="inline-flex items-center gap-2 text-muted-foreground">
+                          <TeamLogo name={team(slotForPick(i, T))} size={22} />
+                          {team(slotForPick(i, T))}
+                        </span>
                       </span>
                     </li>
                   );
@@ -374,7 +382,11 @@ function Board({ draft, players }: { draft: LiveDraft; players: PublicPlayer[] }
                 {Array.from({ length: T }, (_, i) => (
                   <li key={i} className="flex gap-3 py-1 text-xl">
                     <span className="num w-8 text-right text-muted-foreground">{i + 1}</span>
-                    <button className="hover:underline" onClick={() => setTeamPop(i + 1)}>
+                    <button
+                      className="flex items-center gap-2.5 hover:underline"
+                      onClick={() => setTeamPop(i + 1)}
+                    >
+                      <TeamLogo name={team(i + 1)} size={28} />
                       {team(i + 1)}
                     </button>
                   </li>
@@ -694,7 +706,10 @@ function TeamPicks({
         <DialogDescription className="text-lg">
           Picks {ordinal(slot)} · {count} of {draft.rounds} players drafted
         </DialogDescription>
-        <DialogTitle className="font-display text-5xl font-extrabold uppercase">{name}</DialogTitle>
+        <DialogTitle className="flex items-center gap-4 font-display text-5xl font-extrabold uppercase">
+          <TeamLogo name={name} size={64} />
+          {name}
+        </DialogTitle>
         <table className="w-full text-left text-xl">
           <thead className="text-sm uppercase tracking-wider text-muted-foreground">
             <tr>

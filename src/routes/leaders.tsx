@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { TeamLogo } from "@/components/team-logo";
 import { lockerSearch } from "@/lib/history";
 import type { Leader } from "@/lib/season";
 import { seasonQuery } from "@/lib/season-query";
@@ -44,8 +45,9 @@ function Leaders() {
                 <Link
                   to="/history"
                   search={lockerSearch(p.owner)}
-                  className="text-sm text-muted-foreground hover:underline"
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:underline"
                 >
+                  <TeamLogo name={p.owner} size={18} />
                   {p.owner}
                 </Link>
               </div>

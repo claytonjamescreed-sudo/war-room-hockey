@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
+import { TeamLogo } from "@/components/team-logo";
 import { TeamRoster } from "@/components/team-roster";
 import type { Finish } from "@/data/history";
 import type { ArchivedRoster } from "@/lib/archive";
@@ -380,19 +381,22 @@ function Podiums({ all, onTeam }: { all: Pool[]; onTeam: (team: string) => void 
                     </span>
                     <button
                       onClick={() => onTeam(f.t)}
-                      className="text-left font-bold leading-tight hover:underline"
+                      className="flex items-center gap-2 text-left font-bold leading-tight hover:underline"
                     >
-                      {f.t}
-                      {f.raw !== f.t && (
-                        <small className="block text-xs font-medium text-muted-foreground">
-                          as {f.raw}
-                        </small>
-                      )}
-                      {f.tie && (
-                        <small className="block text-xs font-medium text-muted-foreground">
-                          tied
-                        </small>
-                      )}
+                      <TeamLogo name={f.t} size={26} />
+                      <span>
+                        {f.t}
+                        {f.raw !== f.t && (
+                          <small className="block text-xs font-medium text-muted-foreground">
+                            as {f.raw}
+                          </small>
+                        )}
+                        {f.tie && (
+                          <small className="block text-xs font-medium text-muted-foreground">
+                            tied
+                          </small>
+                        )}
+                      </span>
                     </button>
                     <div className="num text-right text-lg font-semibold">
                       {f.p}
@@ -494,9 +498,10 @@ function TeamList({
           <li key={name}>
             <button
               onClick={() => onTeam(name)}
-              className="flex h-full w-full items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3.5 text-left shadow-sm hover:border-foreground"
+              className="flex h-full w-full items-center gap-3 rounded-xl border bg-card px-4 py-3.5 text-left shadow-sm hover:border-foreground"
             >
-              <span className="min-w-0">
+              <TeamLogo name={name} size={52} />
+              <span className="min-w-0 flex-1">
                 <span className="block font-display text-2xl font-extrabold uppercase leading-tight">
                   {name}
                 </span>
@@ -599,16 +604,19 @@ function Locker({
     <section>
       <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-4 bg-band px-5 py-5 text-[#F3EDE1]">
-          <div>
-            <div className="text-xs font-bold uppercase tracking-[0.14em] text-[#A89F90]">
-              Team locker
+          <div className="flex items-center gap-4">
+            <TeamLogo name={team} size={96} className="h-16 w-16 sm:h-24 sm:w-24" />
+            <div className="min-w-0">
+              <div className="text-xs font-bold uppercase tracking-[0.14em] text-[#A89F90]">
+                Team locker
+              </div>
+              <h2 className="font-display text-[clamp(38px,7vw,64px)] font-black uppercase leading-[0.95]">
+                {team}
+              </h2>
+              {l && l.aka.length > 0 && (
+                <div className="mt-2 text-sm text-[#CFC5B4]">Also played as {l.aka.join(", ")}</div>
+              )}
             </div>
-            <h2 className="font-display text-[clamp(38px,7vw,64px)] font-black uppercase leading-[0.95]">
-              {team}
-            </h2>
-            {l && l.aka.length > 0 && (
-              <div className="mt-2 text-sm text-[#CFC5B4]">Also played as {l.aka.join(", ")}</div>
-            )}
           </div>
           {l && (
             <div className="flex flex-wrap items-end gap-x-4 gap-y-3.5">

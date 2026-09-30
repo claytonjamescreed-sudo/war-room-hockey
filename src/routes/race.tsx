@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { TeamLogo } from "@/components/team-logo";
 import { lockerSearch } from "@/lib/history";
 import { addDays } from "@/lib/season";
 import { fmtDate, seasonQuery } from "@/lib/season-query";
@@ -79,9 +80,11 @@ function Race() {
               <Link
                 to="/history"
                 search={lockerSearch(t.name)}
-                className="min-w-0 truncate text-sm font-semibold hover:underline sm:text-base"
+                className="flex min-w-0 items-center gap-1.5 text-sm font-semibold hover:underline sm:text-base"
               >
-                <span className="num text-muted-foreground">{t.rank}</span> {t.name}
+                <span className="num text-muted-foreground">{t.rank}</span>
+                <TeamLogo name={t.name} size={20} />
+                <span className="truncate">{t.name}</span>
               </Link>
               <span className="num shrink-0 text-lg font-bold">{t.pts}</span>
             </div>

@@ -3,6 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ChevronDown, Minus } from "lucide-react";
 import { Fragment, useState } from "react";
 import { LiveTonight } from "@/components/live-tonight";
+import { TeamLogo } from "@/components/team-logo";
 import { TeamRoster } from "@/components/team-roster";
 import { lockerSearch } from "@/lib/history";
 import { fmtDate, liveQuery, seasonQuery } from "@/lib/season-query";
@@ -133,8 +134,9 @@ function Standings() {
                       onClick={() => toggle(t.slot)}
                       aria-expanded={open.has(t.slot)}
                       aria-controls={`roster-${t.slot}`}
-                      className="flex items-center gap-1.5 text-left text-lg font-semibold hover:underline"
+                      className="flex items-center gap-2 text-left text-lg font-semibold hover:underline"
                     >
+                      <TeamLogo name={t.name} size={32} />
                       {t.name}
                       <ChevronDown
                         className={`h-5 w-5 shrink-0 transition-transform ${open.has(t.slot) ? "rotate-180" : ""}`}

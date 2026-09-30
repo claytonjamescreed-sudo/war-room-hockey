@@ -28,3 +28,4 @@
 - `model_meta.player_order` keeps players.json's order, because the engine breaks ties by it.
 - A team's page is its locker (`/history?view=teams&team=<name>`, built with `lockerSearch()`); `/teams/$slot` redirects there. Current names map to locker names with `historyName()` ("TW3" is The Wheeler). Why: one page per team, this season and every season before.
 - `rebuildDailyTotals` also upserts each team's roster into `roster_archive` (season, rank, points, players in draft order, swaps). The lockers show rows from past seasons only; the current season comes live from `getSeason`. Never delete old seasons' rows. Why: once a new season starts, the last sync's rows are the final rosters people look back on.
+- Team badges live in `src/components/team-logo.tsx`, keyed by locker name (`historyName`), each a joke on the team's name. A team without one gets its initials; when a new team joins, draw it a badge there. Why: every team name on the site shows its badge.

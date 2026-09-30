@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.1.1",
+    date: "2026-09-30",
+    title: "Menu, labelled",
+    changes: [
+      {
+        kind: "improved",
+        text: "The ☰ button on phones now says Menu, so it's easy to spot.",
+      },
+    ],
+  },
+  {
     version: "1.1.0",
     date: "2026-09-30",
     title: "A proper phone menu",

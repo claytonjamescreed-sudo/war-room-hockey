@@ -126,9 +126,9 @@ export function InstallButton() {
       <button
         onClick={onClick}
         aria-label="Get the app"
-        className="flex items-center gap-2 rounded-full border border-band-foreground/40 px-3 py-1.5 text-sm font-semibold uppercase tracking-wider text-band-foreground hover:bg-band-foreground/10"
+        className="flex items-center gap-1.5 rounded-full border border-band-foreground/40 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-band-foreground hover:bg-band-foreground/10 sm:gap-2 sm:px-3 sm:text-sm"
       >
-        <Smartphone className="h-5 w-5" aria-hidden />
+        <Smartphone className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
         {/* On the narrowest phones the icon alone, so the header stays on one line */}
         <span className="hidden min-[360px]:inline">Get the app</span>
       </button>

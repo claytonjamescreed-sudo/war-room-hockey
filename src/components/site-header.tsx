@@ -103,11 +103,11 @@ export function SiteHeader() {
       <header className="relative z-40 bg-band text-band-foreground">
         {/* Phones: the logo, Get the app and the menu button. Tablets: the menu as a second row.
             Wide screens: one line. */}
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 px-4 py-2 md:pb-0 xl:flex-nowrap xl:gap-x-6 xl:py-3">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 px-4 py-2 md:gap-x-4 md:pb-0 xl:flex-nowrap xl:gap-x-6 xl:py-3">
           <Link
             to="/"
             activeOptions={{ exact: true }}
-            className="py-1 font-display text-3xl font-extrabold uppercase leading-none tracking-wide xl:py-0 xl:text-4xl"
+            className="py-1 font-display text-[28px] font-extrabold uppercase leading-none tracking-wide sm:text-3xl xl:py-0 xl:text-4xl"
           >
             War Room
           </Link>
@@ -131,9 +131,15 @@ export function SiteHeader() {
               aria-expanded={open}
               aria-controls="phone-menu"
               aria-label={open ? "Close menu" : "Menu"}
-              className="rounded p-2 text-band-foreground hover:bg-band-foreground/10 md:hidden"
+              className="flex items-center gap-1 rounded px-1.5 py-2 text-sm font-semibold uppercase tracking-wider text-band-foreground hover:bg-band-foreground/10 md:hidden"
             >
-              {open ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
+              {open ? (
+                <X className="h-5 w-5" aria-hidden />
+              ) : (
+                <Menu className="h-5 w-5" aria-hidden />
+              )}
+              {/* Stays "Menu" when open (the icon turns to ✕), so the bar doesn't shift */}
+              <span aria-hidden>Menu</span>
             </button>
           </div>
         </div>

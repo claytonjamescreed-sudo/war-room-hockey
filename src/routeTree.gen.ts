@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as DraftRouteImport } from './routes/draft'
+import { Route as HistoryRouteImport } from './routes/history'
 import { Route as LeadersRouteImport } from './routes/leaders'
 import { Route as RaceRouteImport } from './routes/race'
 import { Route as RulesRouteImport } from './routes/rules'
@@ -33,6 +34,11 @@ const AdminRoute = AdminRouteImport.update({
 const DraftRoute = DraftRouteImport.update({
   id: '/draft',
   path: '/draft',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeadersRoute = LeadersRouteImport.update({
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/draft': typeof DraftRoute
+  '/history': typeof HistoryRoute
   '/leaders': typeof LeadersRoute
   '/race': typeof RaceRoute
   '/rules': typeof RulesRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/draft': typeof DraftRoute
+  '/history': typeof HistoryRoute
   '/leaders': typeof LeadersRoute
   '/race': typeof RaceRoute
   '/rules': typeof RulesRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/draft': typeof DraftRoute
+  '/history': typeof HistoryRoute
   '/leaders': typeof LeadersRoute
   '/race': typeof RaceRoute
   '/rules': typeof RulesRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/draft'
+    | '/history'
     | '/leaders'
     | '/race'
     | '/rules'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/draft'
+    | '/history'
     | '/leaders'
     | '/race'
     | '/rules'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/draft'
+    | '/history'
     | '/leaders'
     | '/race'
     | '/rules'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   DraftRoute: typeof DraftRoute
+  HistoryRoute: typeof HistoryRoute
   LeadersRoute: typeof LeadersRoute
   RaceRoute: typeof RaceRoute
   RulesRoute: typeof RulesRoute
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/draft'
       fullPath: '/draft'
       preLoaderRoute: typeof DraftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leaders': {
@@ -239,6 +259,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   DraftRoute: DraftRoute,
+  HistoryRoute: HistoryRoute,
   LeadersRoute: LeadersRoute,
   RaceRoute: RaceRoute,
   RulesRoute: RulesRoute,

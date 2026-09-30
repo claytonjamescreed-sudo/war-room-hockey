@@ -7,6 +7,7 @@ const nav = [
   { to: "/race", label: "Race" },
   { to: "/leaders", label: "Leaders" },
   { to: "/rules", label: "Swaps & Rules" },
+  { to: "/history", label: "History" },
 ] as const;
 
 export function SiteHeader() {

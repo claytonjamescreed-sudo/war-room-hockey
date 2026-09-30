@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -7,11 +7,23 @@ const nav = [
   { to: "/race", label: "Race" },
   { to: "/leaders", label: "Leaders" },
   { to: "/rules", label: "Swaps & Rules" },
-  { to: "/history", label: "History" },
 ] as const;
+
+const item =
+  "rounded px-3 py-2 text-base font-semibold uppercase tracking-wider text-band-foreground/75 hover:text-band-foreground";
+const active = "!text-band-foreground underline decoration-2 underline-offset-8";
 
 export function SiteHeader() {
   const [dark, setDark] = useState(false);
+  // History and Team Lockers are two views of one page
+  const history = useRouterState({
+    select: (st) =>
+      st.location.pathname === "/history"
+        ? (st.location.search as { view?: string }).view === "teams"
+          ? "lockers"
+          : "history"
+        : null,
+  });
   useEffect(() => setDark(document.documentElement.classList.contains("dark")), []);
   const toggle = () => {
     const next = !dark;
@@ -38,14 +50,27 @@ export function SiteHeader() {
               key={n.to}
               to={n.to}
               activeOptions={{ exact: n.to === "/" }}
-              className="rounded px-3 py-2 text-base font-semibold uppercase tracking-wider text-band-foreground/75 hover:text-band-foreground"
-              activeProps={{
-                className: "!text-band-foreground underline decoration-2 underline-offset-8",
-              }}
+              className={item}
+              activeProps={{ className: active }}
             >
               {n.label}
             </Link>
           ))}
+          <Link
+            to="/history"
+            className={`${item} ${history === "history" ? active : ""}`}
+            activeOptions={{ exact: true, includeSearch: true }}
+          >
+            History
+          </Link>
+          <Link
+            to="/history"
+            search={{ view: "teams" }}
+            className={`${item} ${history === "lockers" ? active : ""}`}
+            activeOptions={{ exact: true, includeSearch: true }}
+          >
+            Team Lockers
+          </Link>
         </nav>
         <button
           onClick={toggle}

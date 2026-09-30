@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   CartesianGrid,
@@ -13,16 +13,12 @@ import { addDays } from "@/lib/season";
 import { fmtDate, seasonQuery } from "@/lib/season-query";
 
 export const Route = createFileRoute("/race")({
-  validateSearch: (s: Record<string, unknown>): { team?: number } => {
-    const n = Number(s["team"]);
-    return Number.isInteger(n) && n > 0 ? { team: n } : {};
-  },
   head: () => ({
     meta: [
       { title: "The Race — War Room Hockey Pool" },
       {
         name: "description",
-        content: "Every pool team's points by date over the season, with one team highlighted.",
+        content: "Every pool team's points by date over the season, one small chart per team.",
       },
       { property: "og:title", content: "The Race — War Room Hockey Pool" },
       { property: "og:description", content: "Every pool team's points by date over the season." },
@@ -40,13 +36,12 @@ export const Route = createFileRoute("/race")({
 
 type Point = { date: string; [slot: string]: number | string };
 
+// One small chart per team, in standings order: the team's line in red over the rest of the
+// pool in faint gray, all on the same scale. Fifteen colours can't be told apart, and teams on
+// the same points would hide each other on one chart.
 function Race() {
   const { data } = useSuspenseQuery(seasonQuery);
-  const search = Route.useSearch();
-  const navigate = useNavigate({ from: "/race" });
   const teams = data.teams; // standings order
-  const hi = teams.some((t) => t.slot === search.team) ? search.team! : teams[0]!.slot;
-  const hiTeam = teams.find((t) => t.slot === hi)!;
   const { dates, totals } = data.history;
 
   if (dates.length === 0)
@@ -64,114 +59,116 @@ function Race() {
     for (const t of teams) row[String(t.slot)] = i === 0 ? 0 : totals[t.slot]![i - 1]!;
     return row;
   });
-  const last = points[points.length - 1]!;
+  const top = Math.max(1, ...teams.map((t) => t.pts));
   const tick = (d: string) => (d === start ? "Start" : fmtDate(d));
+  const lastDate = dates[dates.length - 1]!;
 
   return (
     <main className="mx-auto max-w-6xl px-3 py-6 sm:px-4">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-5xl font-extrabold uppercase">The race</h1>
-        <label className="flex max-w-full items-center gap-2 text-lg font-semibold">
-          Highlight
-          <select
-            value={hi}
-            onChange={(e) => navigate({ search: { team: Number(e.target.value) }, replace: true })}
-            className="min-w-0 rounded border bg-card px-3 py-2 text-lg"
-          >
-            {teams.map((t) => (
-              <option key={t.slot} value={t.slot}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <p className="mb-3 text-muted-foreground">
-        Points by date. Hover or tap the chart for every team's total on that date; the standings
-        have the numbers.
+      <h1 className="mb-2 text-5xl font-extrabold uppercase">The race</h1>
+      <p className="mb-5 text-muted-foreground">
+        Every team's points by date, in standings order. Each chart shows one team in red against
+        the rest of the pool in gray, all on the same scale. Through {tick(lastDate)}; tap a team
+        name for its players.
       </p>
-      <div className="mb-2 flex flex-wrap items-center gap-4 text-sm font-semibold">
-        <span className="flex items-center gap-2">
-          <span className="inline-block h-1 w-6 rounded bg-red" aria-hidden />
-          {hiTeam.name} · {String(last[String(hi)])}
-        </span>
-        <span className="flex items-center gap-2 text-muted-foreground">
-          <span className="inline-block h-0.5 w-6 rounded bg-muted-foreground/40" aria-hidden />
-          the other {teams.length - 1} teams
-        </span>
-      </div>
-      <div
-        className="h-[420px] w-full rounded-md border bg-card p-2 sm:h-[520px]"
-        role="img"
-        aria-label={`Points by date for every team, with ${hiTeam.name} highlighted.`}
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={points} margin={{ top: 16, right: 24, bottom: 8, left: 0 }}>
-            <CartesianGrid stroke="var(--color-border)" vertical={false} />
-            <XAxis
-              dataKey="date"
-              tickFormatter={tick}
-              tick={{ fill: "var(--color-muted-foreground)", fontSize: 13 }}
-              tickLine={false}
-              axisLine={{ stroke: "var(--color-border)" }}
-              minTickGap={24}
-            />
-            <YAxis
-              allowDecimals={false}
-              tick={{ fill: "var(--color-muted-foreground)", fontSize: 13 }}
-              tickLine={false}
-              axisLine={false}
-              width={44}
-            />
-            <Tooltip
-              cursor={{ stroke: "var(--color-muted-foreground)", strokeWidth: 1 }}
-              content={({ active, label, payload }) => {
-                if (!active || !payload?.length) return null;
-                const row = payload[0]!.payload as Point;
-                const list = teams
-                  .map((t) => ({ t, v: Number(row[String(t.slot)] ?? 0) }))
-                  .sort((a, b) => b.v - a.v);
-                return (
-                  <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-md">
-                    <div className="mb-1 font-bold">{tick(String(label))}</div>
-                    {list.map(({ t, v }) => (
-                      <div
-                        key={t.slot}
-                        className={`grid grid-cols-[2.5rem_1fr] gap-2 ${t.slot === hi ? "font-bold text-foreground" : "text-muted-foreground"}`}
+      <ol className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+        {teams.map((t) => (
+          <li key={t.slot} className="min-w-0 rounded-md border bg-card px-2 pb-1 pt-2">
+            <div className="flex items-baseline justify-between gap-2 px-1">
+              <Link
+                to="/teams/$slot"
+                params={{ slot: String(t.slot) }}
+                className="min-w-0 truncate text-sm font-semibold hover:underline sm:text-base"
+              >
+                <span className="num text-muted-foreground">{t.rank}</span> {t.name}
+              </Link>
+              <span className="num shrink-0 text-lg font-bold">{t.pts}</span>
+            </div>
+            <div
+              className="h-28 w-full sm:h-32"
+              role="img"
+              aria-label={`${t.name}: ${t.pts} points through ${tick(lastDate)}, rank ${t.rank} of ${teams.length}.`}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                  <CartesianGrid stroke="var(--color-border)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    ticks={[start, lastDate]}
+                    interval={0}
+                    // First label starts at the left edge, the last ends at the right one
+                    tick={({
+                      x,
+                      y,
+                      payload,
+                    }: {
+                      x: number;
+                      y: number;
+                      payload: { value: string };
+                    }) => (
+                      <text
+                        x={x}
+                        y={y + 12}
+                        fontSize={11}
+                        fill="var(--color-muted-foreground)"
+                        textAnchor={payload.value === start ? "start" : "end"}
                       >
-                        <span className="num text-right">{v}</span>
-                        <span>{t.name}</span>
-                      </div>
+                        {tick(payload.value)}
+                      </text>
+                    )}
+                    tickLine={false}
+                    axisLine={{ stroke: "var(--color-border)" }}
+                  />
+                  <YAxis
+                    domain={[0, top]}
+                    allowDecimals={false}
+                    tickCount={3}
+                    tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={28}
+                  />
+                  <Tooltip
+                    cursor={{ stroke: "var(--color-muted-foreground)", strokeWidth: 1 }}
+                    content={({ active, label, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const row = payload[0]!.payload as Point;
+                      return (
+                        <div className="rounded-md border bg-popover px-2.5 py-1.5 text-sm shadow-md">
+                          <div className="font-bold">{tick(String(label))}</div>
+                          <div className="num">{Number(row[String(t.slot)] ?? 0)} pts</div>
+                        </div>
+                      );
+                    }}
+                  />
+                  {teams
+                    .filter((o) => o.slot !== t.slot)
+                    .map((o) => (
+                      <Line
+                        key={o.slot}
+                        dataKey={String(o.slot)}
+                        stroke="var(--color-muted-foreground)"
+                        strokeOpacity={0.25}
+                        strokeWidth={1}
+                        dot={false}
+                        activeDot={false}
+                        isAnimationActive={false}
+                      />
                     ))}
-                  </div>
-                );
-              }}
-            />
-            {teams
-              .filter((t) => t.slot !== hi)
-              .map((t) => (
-                <Line
-                  key={t.slot}
-                  dataKey={String(t.slot)}
-                  stroke="var(--color-muted-foreground)"
-                  strokeOpacity={0.35}
-                  strokeWidth={1.5}
-                  dot={false}
-                  activeDot={false}
-                  isAnimationActive={false}
-                />
-              ))}
-            <Line
-              dataKey={String(hi)}
-              stroke="var(--color-red)"
-              strokeWidth={3}
-              dot={false}
-              activeDot={{ r: 5, stroke: "var(--color-card)", strokeWidth: 2 }}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+                  <Line
+                    dataKey={String(t.slot)}
+                    stroke="var(--color-red)"
+                    strokeWidth={2.5}
+                    dot={false}
+                    activeDot={{ r: 4, stroke: "var(--color-card)", strokeWidth: 2 }}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </li>
+        ))}
+      </ol>
     </main>
   );
 }

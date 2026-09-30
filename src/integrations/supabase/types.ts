@@ -58,6 +58,38 @@ export type Database = {
           },
         ]
       }
+      draft_board: {
+        Row: {
+          created_at: string
+          draft_id: string
+          label: string | null
+          nhl_id: number | null
+          pick_no: number
+        }
+        Insert: {
+          created_at?: string
+          draft_id: string
+          label?: string | null
+          nhl_id?: number | null
+          pick_no: number
+        }
+        Update: {
+          created_at?: string
+          draft_id?: string
+          label?: string | null
+          nhl_id?: number | null
+          pick_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_board_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       draft_picks: {
         Row: {
           name: string
@@ -101,6 +133,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      drafts: {
+        Row: {
+          created_at: string
+          id: string
+          is_current: boolean
+          order_locked_at: string | null
+          rounds: number
+          team_names: Json
+          teams: number
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          is_current?: boolean
+          order_locked_at?: string | null
+          rounds?: number
+          team_names?: Json
+          teams?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_current?: boolean
+          order_locked_at?: string | null
+          rounds?: number
+          team_names?: Json
+          teams?: number
+        }
+        Relationships: []
       }
       model_meta: {
         Row: {
@@ -316,6 +378,32 @@ export type Database = {
         }
         Relationships: []
       }
+      warroom_prefs: {
+        Row: {
+          data: Json
+          draft_id: string
+          updated_at: string
+        }
+        Insert: {
+          data?: Json
+          draft_id: string
+          updated_at?: string
+        }
+        Update: {
+          data?: Json
+          draft_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warroom_prefs_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: true
+            referencedRelation: "drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -329,6 +417,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      start_draft: { Args: { _id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin"

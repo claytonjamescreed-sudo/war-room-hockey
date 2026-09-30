@@ -1,20 +1,10 @@
 // Commissioner tools. Every function except prepareCommissionerLogin requires a signed-in user
 // with the admin role; league writes go through that user's RLS-bound client, and the synced
 // stats tables (service-role only) are written after the role check.
-import { createMiddleware, createServerFn } from "@tanstack/react-start";
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-const requireCommissioner = createMiddleware({ type: "function" })
-  .middleware([requireSupabaseAuth])
-  .server(async ({ next, context }) => {
-    const { data, error } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (error || !data) throw new Error("Only the commissioner can do that.");
-    return next();
-  });
+import { requireCommissioner } from "./commissioner";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date like 2027-02-05");
 

@@ -31,6 +31,8 @@ export async function seedModelData() {
     { key: "players_meta", data: meta },
     { key: "contracts", data: contractsFile },
     { key: "pool_teams", data: poolTeamsFile },
+    // players.json order: the draft engine breaks ties by it
+    { key: "player_order", data: players.map((p) => p.id) },
   ]);
   if (m.error) throw m.error;
   return { ok: true, players: players.length };

@@ -1,11 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { CommissionerGate, ConfirmButton, Err } from "@/components/commissioner";
+import { field, msg, primary, quiet, useAction } from "@/hooks/use-commissioner";
 import {
   adminState,
-  prepareCommissionerLogin,
   rebuildTotals,
   recordSwap,
   renameTeam,
@@ -13,7 +12,6 @@ import {
   setCountFrom,
   syncBatch,
   undoSwap,
-  whoami,
 } from "@/lib/admin.functions";
 import type { getSeason } from "@/lib/season.functions";
 import { fmtDate, seasonQuery } from "@/lib/season-query";
@@ -30,86 +28,7 @@ export const Route = createFileRoute("/admin")({
   component: Admin,
 });
 
-const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const todayET = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
-const field = "rounded border bg-card px-3 py-2 text-lg";
-const primary =
-  "rounded bg-primary px-4 py-2 text-lg font-bold uppercase tracking-wide text-primary-foreground disabled:opacity-50";
-const quiet = "rounded border px-4 py-2 text-lg font-semibold hover:bg-muted disabled:opacity-50";
-
-function useSession() {
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
-  useEffect(() => {
-    let alive = true;
-    supabase.auth.getSession().then(({ data }) => alive && setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => {
-      alive = false;
-      data.subscription.unsubscribe();
-    };
-  }, []);
-  return session;
-}
-
-// busy / error state around one async action
-function useAction() {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const run = async (fn: () => Promise<unknown>) => {
-    setBusy(true);
-    setError(null);
-    try {
-      await fn();
-      return true;
-    } catch (e) {
-      setError(msg(e));
-      return false;
-    } finally {
-      setBusy(false);
-    }
-  };
-  return { busy, error, run };
-}
-
-// A button that needs a second tap within a few seconds
-function ConfirmButton({
-  label,
-  confirmLabel,
-  onConfirm,
-  disabled,
-  className = quiet,
-}: {
-  label: string;
-  confirmLabel: string;
-  onConfirm: () => void;
-  disabled?: boolean;
-  className?: string;
-}) {
-  const [armed, setArmed] = useState(false);
-  useEffect(() => {
-    if (!armed) return;
-    const t = setTimeout(() => setArmed(false), 4000);
-    return () => clearTimeout(t);
-  }, [armed]);
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={() => {
-        if (!armed) return setArmed(true);
-        setArmed(false);
-        onConfirm();
-      }}
-      className={
-        armed
-          ? "rounded bg-red px-4 py-2 text-lg font-bold uppercase tracking-wide text-white"
-          : className
-      }
-    >
-      {armed ? confirmLabel : label}
-    </button>
-  );
-}
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -120,115 +39,14 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-const Err = ({ error }: { error: string | null }) =>
-  error ? (
-    <p role="alert" className="mt-2 font-semibold text-red">
-      {error}
-    </p>
-  ) : null;
-
 function Admin() {
-  const session = useSession();
-  const me = useQuery({
-    queryKey: ["whoami", session?.user.id],
-    enabled: !!session,
-    queryFn: async () => {
-      // Grants the admin role on first sign-in if this is the commissioner's email
-      await supabase.rpc("claim_admin");
-      return whoami();
-    },
-  });
-  const signOut = () => supabase.auth.signOut();
-
-  let body: ReactNode;
-  if (session === undefined || (session && me.isPending))
-    body = <p className="text-lg text-muted-foreground">Checking sign-in…</p>;
-  else if (!session) body = <SignIn />;
-  else if (me.error)
-    body = (
-      <>
-        <p className="text-lg">Couldn't check your account: {msg(me.error)}</p>
-        <button onClick={signOut} className={`${quiet} mt-4`}>
-          Sign out
-        </button>
-      </>
-    );
-  else if (!me.data?.isAdmin)
-    body = (
-      <>
-        <p className="text-lg">
-          {me.data?.email ?? "This account"} isn't the commissioner's account.
-        </p>
-        <button onClick={signOut} className={`${quiet} mt-4`}>
-          Sign out
-        </button>
-      </>
-    );
-  else body = <Tools email={me.data.email} onSignOut={signOut} />;
-
   return (
     <main className="mx-auto max-w-4xl px-3 py-6 sm:px-4">
       <h1 className="mb-6 text-4xl font-extrabold uppercase sm:text-5xl">Commissioner</h1>
-      {body}
+      <CommissionerGate>
+        {({ email, signOut }) => <Tools email={email} onSignOut={signOut} />}
+      </CommissionerGate>
     </main>
-  );
-}
-
-function SignIn() {
-  const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
-  const { busy, error, run } = useAction();
-  const send = (e: FormEvent) => {
-    e.preventDefault();
-    run(async () => {
-      const { ok } = await prepareCommissionerLogin({ data: { email } });
-      if (ok) {
-        const { error } = await supabase.auth.signInWithOtp({
-          email: email.trim(),
-          options: { shouldCreateUser: false, emailRedirectTo: `${location.origin}/admin` },
-        });
-        if (error) throw error;
-      }
-      // Same answer either way, so the page doesn't reveal the commissioner's email
-      setSent(true);
-    });
-  };
-  if (sent)
-    return (
-      <div className="rounded-md border bg-card px-4 py-4 text-lg">
-        <p className="font-semibold">Check your email.</p>
-        <p className="mt-1 text-muted-foreground">
-          If that's the commissioner's address, a sign-in link is on its way. Open it on this
-          device. Nothing after a few minutes? Check the spelling and{" "}
-          <button className="underline" onClick={() => setSent(false)}>
-            try again
-          </button>
-          .
-        </p>
-      </div>
-    );
-  return (
-    <form onSubmit={send} className="max-w-md">
-      <p className="mb-4 text-lg text-muted-foreground">
-        Only the commissioner can sign in. Enter your email and we'll send you a sign-in link.
-      </p>
-      <label className="mb-1 block font-semibold" htmlFor="email">
-        Email
-      </label>
-      <input
-        id="email"
-        type="email"
-        required
-        autoComplete="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className={`${field} w-full`}
-      />
-      <button type="submit" disabled={busy} className={`${primary} mt-4`}>
-        {busy ? "Sending…" : "Send sign-in link"}
-      </button>
-      <Err error={error} />
-    </form>
   );
 }
 
@@ -252,6 +70,12 @@ function Tools({ email, onSignOut }: { email: string | null; onSignOut: () => vo
         <button onClick={onSignOut} className="underline">
           Sign out
         </button>
+        <Link to="/draft" className="font-semibold text-foreground underline">
+          Draft room
+        </Link>
+        <Link to="/tv" className="font-semibold text-foreground underline">
+          TV board
+        </Link>
       </p>
       <SyncPanel lastSyncedAt={s.season.lastSyncedAt} refresh={refresh} />
       <SwapPanel admin={s} season={season.data} refresh={refresh} />

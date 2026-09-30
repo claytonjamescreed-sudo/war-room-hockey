@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -125,13 +126,15 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // The TV board fills the screen on its own
+  const bare = useRouterState({ select: (s) => s.location.pathname === "/tv" });
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <SiteHeader />
+      {!bare && <SiteHeader />}
       <Outlet />
-      <SiteFooter />
+      {!bare && <SiteFooter />}
     </QueryClientProvider>
   );
 }

@@ -12,4 +12,9 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    // A stamp for this build, the same in the server and the browser bundles, so an open page
+    // can tell when a newer version has been published (see src/components/update-notice.tsx)
+    define: { __APP_BUILD__: JSON.stringify(Date.now().toString(36)) },
+  },
 });

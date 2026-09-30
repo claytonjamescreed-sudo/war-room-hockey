@@ -10,12 +10,30 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LeadersRouteImport } from './routes/leaders'
+import { Route as RulesRouteImport } from './routes/rules'
+import { Route as TeamsSlotRouteImport } from './routes/teams.$slot'
 import { Route as ApiPublicCronSeedRouteImport } from './routes/api/public/cron/seed'
 import { Route as ApiPublicCronSyncRouteImport } from './routes/api/public/cron/sync'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeadersRoute = LeadersRouteImport.update({
+  id: '/leaders',
+  path: '/leaders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RulesRoute = RulesRouteImport.update({
+  id: '/rules',
+  path: '/rules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsSlotRoute = TeamsSlotRouteImport.update({
+  id: '/teams/$slot',
+  path: '/teams/$slot',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicCronSeedRoute = ApiPublicCronSeedRouteImport.update({
@@ -31,30 +49,61 @@ const ApiPublicCronSyncRoute = ApiPublicCronSyncRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/leaders': typeof LeadersRoute
+  '/rules': typeof RulesRoute
+  '/teams/$slot': typeof TeamsSlotRoute
   '/api/public/cron/seed': typeof ApiPublicCronSeedRoute
   '/api/public/cron/sync': typeof ApiPublicCronSyncRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/leaders': typeof LeadersRoute
+  '/rules': typeof RulesRoute
+  '/teams/$slot': typeof TeamsSlotRoute
   '/api/public/cron/seed': typeof ApiPublicCronSeedRoute
   '/api/public/cron/sync': typeof ApiPublicCronSyncRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/leaders': typeof LeadersRoute
+  '/rules': typeof RulesRoute
+  '/teams/$slot': typeof TeamsSlotRoute
   '/api/public/cron/seed': typeof ApiPublicCronSeedRoute
   '/api/public/cron/sync': typeof ApiPublicCronSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/cron/seed' | '/api/public/cron/sync'
+  fullPaths:
+    | '/'
+    | '/leaders'
+    | '/rules'
+    | '/teams/$slot'
+    | '/api/public/cron/seed'
+    | '/api/public/cron/sync'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/cron/seed' | '/api/public/cron/sync'
-  id: '__root__' | '/' | '/api/public/cron/seed' | '/api/public/cron/sync'
+  to:
+    | '/'
+    | '/leaders'
+    | '/rules'
+    | '/teams/$slot'
+    | '/api/public/cron/seed'
+    | '/api/public/cron/sync'
+  id:
+    | '__root__'
+    | '/'
+    | '/leaders'
+    | '/rules'
+    | '/teams/$slot'
+    | '/api/public/cron/seed'
+    | '/api/public/cron/sync'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LeadersRoute: typeof LeadersRoute
+  RulesRoute: typeof RulesRoute
+  TeamsSlotRoute: typeof TeamsSlotRoute
   ApiPublicCronSeedRoute: typeof ApiPublicCronSeedRoute
   ApiPublicCronSyncRoute: typeof ApiPublicCronSyncRoute
 }
@@ -66,6 +115,27 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaders': {
+      id: '/leaders'
+      path: '/leaders'
+      fullPath: '/leaders'
+      preLoaderRoute: typeof LeadersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rules': {
+      id: '/rules'
+      path: '/rules'
+      fullPath: '/rules'
+      preLoaderRoute: typeof RulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teams/$slot': {
+      id: '/teams/$slot'
+      path: '/teams/$slot'
+      fullPath: '/teams/$slot'
+      preLoaderRoute: typeof TeamsSlotRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/cron/seed': {
@@ -87,6 +157,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LeadersRoute: LeadersRoute,
+  RulesRoute: RulesRoute,
+  TeamsSlotRoute: TeamsSlotRoute,
   ApiPublicCronSeedRoute: ApiPublicCronSeedRoute,
   ApiPublicCronSyncRoute: ApiPublicCronSyncRoute,
 }

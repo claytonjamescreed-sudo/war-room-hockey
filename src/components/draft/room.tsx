@@ -50,7 +50,7 @@ import { warRoomData } from "@/lib/warroom.functions";
 import { DraftGrid, HurtChip, PlayersBoard } from "./board";
 import { OrderSheet } from "./order-sheet";
 import { Clock, LogPanel, RecPanel, TeamPanel } from "./panels";
-import { RoomContext, useRoom, type Room } from "./room-context";
+import { RoomContext, useRoom, type Room as RoomValue } from "./room-context";
 import { MockSheet, SettingsSheet } from "./sheets";
 
 type WarRoomRaw = { data: PlayersFile; contracts: ContractsFile; poolTeams: PoolTeamsFile };
@@ -369,7 +369,7 @@ export function Room({
     toast("Back to your real draft");
   };
 
-  const room: Room = {
+  const room: RoomValue = {
     ctx,
     poolTeams,
     mode: inMock ? "mock" : "real",

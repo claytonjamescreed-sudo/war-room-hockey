@@ -418,6 +418,7 @@ export type Database = {
         Returns: boolean
       }
       start_draft: { Args: { _id: string }; Returns: undefined }
+      sync_token_ok: { Args: { _token: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin"

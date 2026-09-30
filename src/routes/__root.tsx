@@ -126,6 +126,18 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+  // A sign-in link that lands anywhere else (if the auth redirect to /admin isn't allowed) still
+  // signs the commissioner in, then goes to /admin
+  useEffect(() => {
+    const { hash, search, pathname } = window.location;
+    if (!/access_token=/.test(hash) && !/[?&]code=/.test(search)) return;
+    if (pathname === "/admin" || pathname === "/draft") return;
+    import("@/integrations/supabase/client").then(async ({ supabase }) => {
+      await supabase.auth.getSession();
+      router.navigate({ to: "/admin" });
+    });
+  }, [router]);
   // The TV board fills the screen on its own
   const bare = useRouterState({ select: (s) => s.location.pathname === "/tv" });
 

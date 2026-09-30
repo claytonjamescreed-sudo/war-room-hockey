@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790782394898,
+      "tag": "0000_war_room_schema_and_league_seed",
+      "breakpoints": true
+    }
+  ]
 }

@@ -14,16 +14,324 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_emails: {
+        Row: {
+          email: string
+        }
+        Insert: {
+          email: string
+        }
+        Update: {
+          email?: string
+        }
+        Relationships: []
+      }
+      daily_totals: {
+        Row: {
+          points: number
+          rank: number
+          season_id: string
+          slot: number
+          total_date: string
+        }
+        Insert: {
+          points: number
+          rank: number
+          season_id: string
+          slot: number
+          total_date: string
+        }
+        Update: {
+          points?: number
+          rank?: number
+          season_id?: string
+          slot?: number
+          total_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_totals_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draft_picks: {
+        Row: {
+          name: string
+          nhl_id: number
+          pick_no: number
+          pos: string | null
+          preseason_proj: number | null
+          round: number
+          season_id: string
+          slot: number
+          team: string | null
+        }
+        Insert: {
+          name: string
+          nhl_id: number
+          pick_no: number
+          pos?: string | null
+          preseason_proj?: number | null
+          round: number
+          season_id: string
+          slot: number
+          team?: string | null
+        }
+        Update: {
+          name?: string
+          nhl_id?: number
+          pick_no?: number
+          pos?: string | null
+          preseason_proj?: number | null
+          round?: number
+          season_id?: string
+          slot?: number
+          team?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_picks_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_meta: {
+        Row: {
+          data: Json
+          key: string
+        }
+        Insert: {
+          data: Json
+          key: string
+        }
+        Update: {
+          data?: Json
+          key?: string
+        }
+        Relationships: []
+      }
+      player_games: {
+        Row: {
+          assists: number
+          game_date: string
+          game_id: number
+          goals: number
+          home: boolean | null
+          nhl_id: number
+          opp: string | null
+          team: string | null
+        }
+        Insert: {
+          assists?: number
+          game_date: string
+          game_id: number
+          goals?: number
+          home?: boolean | null
+          nhl_id: number
+          opp?: string | null
+          team?: string | null
+        }
+        Update: {
+          assists?: number
+          game_date?: string
+          game_id?: number
+          goals?: number
+          home?: boolean | null
+          nhl_id?: number
+          opp?: string | null
+          team?: string | null
+        }
+        Relationships: []
+      }
+      player_model: {
+        Row: {
+          data: Json
+          nhl_id: number
+        }
+        Insert: {
+          data: Json
+          nhl_id: number
+        }
+        Update: {
+          data?: Json
+          nhl_id?: number
+        }
+        Relationships: []
+      }
+      players: {
+        Row: {
+          last_a: number | null
+          last_g: number | null
+          last_gp: number | null
+          last_pts: number | null
+          name: string
+          nhl_id: number
+          pos: string | null
+          team: string | null
+        }
+        Insert: {
+          last_a?: number | null
+          last_g?: number | null
+          last_gp?: number | null
+          last_pts?: number | null
+          name: string
+          nhl_id: number
+          pos?: string | null
+          team?: string | null
+        }
+        Update: {
+          last_a?: number | null
+          last_g?: number | null
+          last_gp?: number | null
+          last_pts?: number | null
+          name?: string
+          nhl_id?: number
+          pos?: string | null
+          team?: string | null
+        }
+        Relationships: []
+      }
+      pool_teams: {
+        Row: {
+          name: string
+          season_id: string
+          slot: number
+        }
+        Insert: {
+          name: string
+          season_id: string
+          slot: number
+        }
+        Update: {
+          name?: string
+          season_id?: string
+          slot?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pool_teams_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roster_moves: {
+        Row: {
+          created_at: string
+          id: string
+          in_id: number
+          in_name: string | null
+          move_date: string
+          out_id: number
+          season_id: string
+          slot: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          in_id: number
+          in_name?: string | null
+          move_date: string
+          out_id: number
+          season_id: string
+          slot: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          in_id?: number
+          in_name?: string | null
+          move_date?: string
+          out_id?: number
+          season_id?: string
+          slot?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roster_moves_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seasons: {
+        Row: {
+          count_from: string
+          id: string
+          is_current: boolean
+          last_synced_at: string | null
+          nhl_season: number
+          order_locked_at: string | null
+          season_games: number
+          swaps_per_team: number
+        }
+        Insert: {
+          count_from: string
+          id: string
+          is_current?: boolean
+          last_synced_at?: string | null
+          nhl_season: number
+          order_locked_at?: string | null
+          season_games?: number
+          swaps_per_team?: number
+        }
+        Update: {
+          count_from?: string
+          id?: string
+          is_current?: boolean
+          last_synced_at?: string | null
+          nhl_season?: number
+          order_locked_at?: string | null
+          season_games?: number
+          swaps_per_team?: number
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_admin: { Args: never; Returns: boolean }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +458,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin"],
+    },
   },
 } as const

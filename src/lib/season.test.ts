@@ -37,7 +37,7 @@ const setup = (moves: Setup["moves"] = []): Setup => ({
 describe("computeSeason (port of season.js)", () => {
   it("counts only games from countFrom and ties share a rank", () => {
     const d = computeSeason(draft, setup(), raw());
-    const by = Object.fromEntries(d.teams.map((t) => [t.name, t]));
+    const by = Object.fromEntries(d.teams.map((t) => [t.name, t])) as Record<"A" | "B" | "C", (typeof d.teams)[number]>;
     expect(by.A.pts).toBe(3);
     expect(by.B.pts).toBe(2);
     expect(d.history.dates).toEqual(["2026-09-29", "2026-10-01"]);
@@ -55,7 +55,7 @@ describe("computeSeason (port of season.js)", () => {
     // Before 10-01 the old roster (P3: 1) counts; from 10-01 Free counts for his whole season (3)
     expect(d.history.totals[3]).toEqual([1, 3]);
     expect(c.pts).toBe(3);
-    expect(c.dropped[0].name).toBe("P3");
+    expect(c.dropped[0]!.name).toBe("P3");
     expect(c.swapsUsed).toBe(1);
     expect(c.roster.map((p) => p.id)).toEqual([9]);
     expect(d.available.find((l) => l.id === 9)).toBeUndefined();
@@ -63,10 +63,10 @@ describe("computeSeason (port of season.js)", () => {
 
   it("projects finish with prior 20 games and 0.45 default rate", () => {
     const d = computeSeason(draft, setup(), raw());
-    const a = d.teams.find((t) => t.name === "A")!.roster[0];
+    const a = d.teams.find((t) => t.name === "A")!.roster[0]!;
     // rate = (84/84*20 + 3) / (20 + 2) ; remaining 82
     expect(a.projected).toBe(Math.round(3 + ((20 + 3) / 22) * 82));
-    const c = d.teams.find((t) => t.name === "C")!.roster[0];
+    const c = d.teams.find((t) => t.name === "C")!.roster[0]!;
     expect(c.projected).toBe(Math.round(1 + ((0.45 * 20 + 1) / 22) * 82));
   });
 

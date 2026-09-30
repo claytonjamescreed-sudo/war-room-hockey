@@ -152,8 +152,8 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
     const p = info.get(id) || ({} as Partial<Info>);
     const g = gl.reduce((s, x) => s + x.g, 0);
     const a = gl.reduce((s, x) => s + x.a, 0);
-    const team = gl.length ? gl[gl.length - 1].team : (p.team ?? null);
-    const last = gl.length ? gl[gl.length - 1] : null;
+    const team = gl.length ? gl[gl.length - 1]!.team : (p.team ?? null);
+    const last = gl.length ? gl[gl.length - 1]! : null;
     const teamGP = (team != null ? raw.teamGP[team] : undefined) ?? gl.length;
     const remaining = Math.max(0, rules.seasonGames - teamGP);
     const prior = p.proj != null ? p.proj / rules.seasonGames : DEFAULT_RATE;
@@ -191,10 +191,10 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
     return {
       slot: t.slot,
       name: t.name,
-      pts: nowTotals[i],
-      rank: nowRank[i],
-      prevRank: prevRank ? prevRank[i] : null,
-      back: leaderPts - nowTotals[i],
+      pts: nowTotals[i]!,
+      rank: nowRank[i]!,
+      prevRank: prevRank ? prevRank[i]! : null,
+      back: leaderPts - nowTotals[i]!,
       lastNight,
       last7: current.reduce((s, p) => s + p.last7, 0),
       playingNext: current.filter((p) => p.playsNext).length,

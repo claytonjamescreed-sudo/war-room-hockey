@@ -42,12 +42,12 @@ export const getScores = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }) => {
     const { fetchScores } = await import("./nhl.server");
-    return (await fetchScores(data.date)) as Record<string, unknown> | null;
+    return JSON.stringify(await fetchScores(data.date));
   });
 
 export const getBoxscore = createServerFn({ method: "GET" })
   .inputValidator((d: { gameId: number }) => z.object({ gameId: z.number().int().positive() }).parse(d))
   .handler(async ({ data }) => {
     const { fetchBoxscore } = await import("./nhl.server");
-    return (await fetchBoxscore(data.gameId)) as Record<string, unknown> | null;
+    return JSON.stringify(await fetchBoxscore(data.gameId));
   });

@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/public/cron/sync")({
           const batch = ids.slice(offset, offset + limit);
           const logs = await pool(batch, 8, (id) => fetchGameLog(id));
           const rows = batch.flatMap((id, i) =>
-            logs[i].map((g: any) => ({
+            logs[i]!.map((g: any) => ({
               nhl_id: id,
               game_id: g.gameId,
               game_date: g.date,
@@ -48,14 +48,14 @@ export const Route = createFileRoute("/api/public/cron/sync")({
         const logs = await loadLogs(sb, ids);
         const data = computeSeason(draft, setup, { fetchedAt: "", logs, leaders: [], teamGP: {}, schedule: [] });
         const totals = data.history.dates.flatMap((d, di) => {
-          const pts = draft.teams.map((t) => data.history.totals[t.slot][di]);
+          const pts = draft.teams.map((t) => data.history.totals[t.slot]![di]!);
           const sorted = [...pts].sort((a, b) => b - a);
           return draft.teams.map((t, i) => ({
             season_id: season.id,
             total_date: d,
             slot: t.slot,
             points: pts[i],
-            rank: sorted.indexOf(pts[i]) + 1,
+            rank: sorted.indexOf(pts[i]!) + 1,
           }));
         });
         await sb.from("daily_totals").delete().eq("season_id", season.id);

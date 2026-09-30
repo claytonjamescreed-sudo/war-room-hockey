@@ -92,7 +92,7 @@ export async function pool<T, R>(items: T[], limit: number, fn: (x: T, i: number
     Array.from({ length: limit }, async () => {
       while (next < items.length) {
         const i = next++;
-        out[i] = await fn(items[i], i);
+        out[i] = await fn(items[i]!, i);
       }
     }),
   );

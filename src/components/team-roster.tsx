@@ -46,9 +46,12 @@ export function TeamRoster({
   // The team page adds games played and last game; the standings keep it short for phones
   full?: boolean;
 }) {
+  // In the order the team drafted them
+  const order = new Map(team.drafted.map((d, i) => [d.id, i]));
+  const round = new Map(team.drafted.map((d) => [d.id, d.round]));
   const rows = team.roster
     .map((p) => ({ p, l: livePlayer(p, live) }))
-    .sort((x, y) => y.l.pts - x.l.pts || y.l.g - x.l.g || x.p.name.localeCompare(y.p.name));
+    .sort((x, y) => (order.get(x.p.id) ?? 99) - (order.get(y.p.id) ?? 99));
   return (
     <table className="w-full text-left">
       <thead className="text-sm uppercase tracking-wider text-muted-foreground">
@@ -70,7 +73,7 @@ export function TeamRoster({
               <td className="px-3 py-2">
                 <div className="font-semibold">{p.name}</div>
                 <div className="text-sm text-muted-foreground">
-                  {p.team} · {p.pos}
+                  {p.team} · {p.pos} · {round.get(p.id) != null ? `Rd ${round.get(p.id)}` : "Swap"}
                 </div>
               </td>
               {full && <td className="num px-3 py-2 text-right text-lg">{l.gp}</td>}

@@ -58,6 +58,9 @@ describe("computeSeason (port of season.js)", () => {
     expect(c.dropped[0]!.name).toBe("P3");
     expect(c.swapsUsed).toBe(1);
     expect(c.roster.map((p) => p.id)).toEqual([9]);
+    // In draft order, the new player takes the dropped player's place, with no round
+    expect(c.drafted).toEqual([{ id: 9, round: null }]);
+    expect(d.teams.find((t) => t.name === "A")!.drafted).toEqual([{ id: 1, round: 1 }]);
     expect(d.available.find((l) => l.id === 9)).toBeUndefined();
   });
 

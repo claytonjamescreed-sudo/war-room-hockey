@@ -207,6 +207,11 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
       swapsUsed: moves.filter((m) => m.slot === t.slot).length,
       roster: current.sort((a, b) => b.pts - a.pts || b.g - a.g || a.name.localeCompare(b.name)),
       dropped,
+      // Draft order, with a swapped-in player in the place of the one he replaced (round null)
+      drafted: rosterAt(t.slot, null).map((id) => ({
+        id,
+        round: draft.picks.find((p) => p.slot === t.slot && p.id === id)?.round ?? null,
+      })),
     };
   });
   teams.sort((a, b) => a.rank - b.rank || b.projected - a.projected || a.name.localeCompare(b.name));

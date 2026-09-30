@@ -144,7 +144,9 @@ function Standings() {
                       <div className="text-sm text-muted-foreground">
                         {[
                           lt.playing ? `${lt.playing} playing now` : "",
-                          lt.toPlay ? `${lt.toPlay} still to play` : "",
+                          lt.toPlay
+                            ? `${lt.toPlay} ${lt.playing ? "more tonight" : "playing tonight"}`
+                            : "",
                         ]
                           .filter(Boolean)
                           .join(" · ")}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 const nav = [
   { to: "/", label: "Standings" },
+  { to: "/race", label: "Race" },
   { to: "/leaders", label: "Leaders" },
   { to: "/rules", label: "Swaps & Rules" },
 ] as const;
@@ -17,12 +18,17 @@ export function SiteHeader() {
     document.documentElement.classList.toggle("dark", next);
     try {
       localStorage.setItem("theme", next ? "dark" : "light");
-    } catch {}
+    } catch {
+      // storage blocked: the theme just won't be remembered
+    }
   };
   return (
     <header className="bg-band text-band-foreground">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-        <Link to="/" className="font-display text-4xl font-extrabold uppercase leading-none tracking-wide">
+        <Link
+          to="/"
+          className="font-display text-4xl font-extrabold uppercase leading-none tracking-wide"
+        >
           War Room
         </Link>
         <nav className="flex flex-1 flex-wrap gap-1">
@@ -32,7 +38,9 @@ export function SiteHeader() {
               to={n.to}
               activeOptions={{ exact: n.to === "/" }}
               className="rounded px-3 py-2 text-base font-semibold uppercase tracking-wider text-band-foreground/75 hover:text-band-foreground"
-              activeProps={{ className: "!text-band-foreground underline decoration-2 underline-offset-8" }}
+              activeProps={{
+                className: "!text-band-foreground underline decoration-2 underline-offset-8",
+              }}
             >
               {n.label}
             </Link>

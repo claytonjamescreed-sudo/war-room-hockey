@@ -101,10 +101,11 @@ const periodName = (pd: FeedGame["periodDescriptor"], period?: number) => {
   return ordinal(pd?.number ?? period ?? 1);
 };
 
-const ET = new Intl.DateTimeFormat("en-US", {
+// Start times in Pacific time, the pool's home time zone
+const PT = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
   minute: "2-digit",
-  timeZone: "America/New_York",
+  timeZone: "America/Los_Angeles",
 });
 export function gameLabel(g: FeedGame): string {
   const s = gameStatus(g.gameState);
@@ -117,7 +118,7 @@ export function gameLabel(g: FeedGame): string {
     const p = periodName(g.periodDescriptor, g.period);
     return p === "SO" ? "Shootout" : `${p} ${g.clock?.timeRemaining ?? ""}`.trim();
   }
-  return g.startTimeUTC ? `${ET.format(new Date(g.startTimeUTC))} ET` : "Tonight";
+  return g.startTimeUTC ? `${PT.format(new Date(g.startTimeUTC))} PT` : "Tonight";
 }
 
 const counts = (goal: FeedGoal) => goal.periodDescriptor?.periodType !== "SO";

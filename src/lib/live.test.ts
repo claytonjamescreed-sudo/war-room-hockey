@@ -216,7 +216,7 @@ describe("computeLive", () => {
       gameLabel({ id: 1, gameState: "OFF", periodDescriptor: { number: 4, periodType: "OT" } }),
     ).toBe("Final/OT");
     expect(gameLabel({ id: 1, gameState: "FUT", startTimeUTC: "2026-10-04T02:00:00Z" })).toBe(
-      "10:00 PM ET",
+      "7:00 PM PT",
     );
     expect(
       gameLabel({

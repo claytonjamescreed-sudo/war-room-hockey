@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.1.0",
+    date: "2026-09-30",
+    title: "A proper phone menu",
+    changes: [
+      {
+        kind: "improved",
+        text: "On phones, the menu opens from the ☰ button at the top: every page in one list, no swiping, with the light/dark switch at the bottom.",
+      },
+    ],
+  },
+  {
     version: "1.0.0",
     date: "2026-09-30",
     title: "Opening night",

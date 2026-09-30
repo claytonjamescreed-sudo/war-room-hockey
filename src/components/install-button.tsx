@@ -125,10 +125,12 @@ export function InstallButton() {
     <>
       <button
         onClick={onClick}
+        aria-label="Get the app"
         className="flex items-center gap-2 rounded-full border border-band-foreground/40 px-3 py-1.5 text-sm font-semibold uppercase tracking-wider text-band-foreground hover:bg-band-foreground/10"
       >
         <Smartphone className="h-5 w-5" aria-hidden />
-        Get the app
+        {/* On the narrowest phones the icon alone, so the header stays on one line */}
+        <span className="hidden min-[360px]:inline">Get the app</span>
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">

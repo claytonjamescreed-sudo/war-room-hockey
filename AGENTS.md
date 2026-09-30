@@ -12,7 +12,8 @@
 # Architecture rules
 
 - Season scoring lives in `src/lib/season.ts`, a behaviour-exact port of season.js; change only with tests in `season.test.ts`. Why: numbers must match OfficePools.
-- Game logs are synced from NHL.com into `player_games` by `/api/public/cron/sync` (cron-secret protected); pages read the DB, never fetch 150 logs per request. Why: Worker subrequest limits and speed.
+- Game logs are synced from NHL.com into `player_games` by `/api/public/cron/sync`; pages read the DB, never fetch 150 logs per request. Why: Worker subrequest limits and speed.
+- The morning sync runs from pg_cron (`war-room-sync-a` 12:45 UTC, `war-room-sync-b` 12:50 UTC, half the players each). The jobs sign with a key the database generated in the vault (`war_room_sync_token`, checked by `sync_token_ok()`, service role only); the route also accepts `LOVABLE_CRON_SECRET`. Why: nobody has to copy a secret into SQL.
 - `sync` also rewrites `daily_totals` for every date since count_from. Why: movement arrows and race chart come from saved totals.
 - Projections/ESPN/injury/linemate data live only in `player_model`/`model_meta` (admin-only RLS); public `players` has safe columns. Why: War Room strategy must never reach public pages.
 - Seed JSON lives in `src/data/seed/` and is imported only from `*.server.ts`. Why: keep private model data out of client bundles.

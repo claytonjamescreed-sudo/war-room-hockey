@@ -95,6 +95,8 @@ export function SiteFooter() {
       <Link to="/admin" className="hover:underline">
         Commissioner
       </Link>
+      {/* Which published version this page is running, to compare after "Update now" */}
+      <span className="num ml-auto">Version {__APP_BUILD__}</span>
     </footer>
   );
 }

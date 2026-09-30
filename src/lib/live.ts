@@ -4,7 +4,7 @@
 // earlier game day the morning sync hasn't picked up yet (matched by NHL game id, so nothing
 // counts twice), plus tonight's points from the feed. Shootout goals don't count, as in NHL stats.
 
-import type { Draft, GameLine, Setup } from "./season";
+import type { Draft, GameLine, PlayerLine, Setup } from "./season";
 
 export type FeedGoal = {
   period?: number;
@@ -74,7 +74,12 @@ export type LiveData = {
   games: LiveGame[];
   teams: LiveTeam[];
   ticker: TickerEntry[];
-  players: Record<number, { status: PlayerStatus; g: number; a: number }>;
+  // Each pool player: tonight's status and points, and his season before tonight (synced games
+  // plus any earlier game the morning sync hasn't stored yet), so before + tonight is his live total
+  players: Record<
+    number,
+    { status: PlayerStatus; g: number; a: number; before: { g: number; a: number } }
+  >;
 };
 
 const STATUS: Record<string, PlayerStatus> = {
@@ -198,16 +203,24 @@ export function computeLive(input: {
   // Synced points before tonight, plus earlier days' feed points the sync hasn't stored yet
   const synced = new Set<string>();
   const before = (id: number) =>
-    (logs[id] ?? []).reduce((s, g) => {
-      synced.add(`${id}:${g.gameId}`);
-      return g.date >= countFrom && g.date < date ? s + g.g + g.a : s;
-    }, 0);
-  const baseById = new Map<number, number>();
-  for (const id of ownerOf.keys()) baseById.set(id, before(id));
+    (logs[id] ?? []).reduce(
+      (s, g) => {
+        synced.add(`${id}:${g.gameId}`);
+        return g.date >= countFrom && g.date < date ? { g: s.g + g.g, a: s.a + g.a } : s;
+      },
+      { g: 0, a: 0 },
+    );
+  const beforeById = new Map<number, { g: number; a: number }>();
+  for (const id of ownerOf.keys()) beforeById.set(id, before(id));
   for (const day of earlier)
-    for (const e of feedPoints(day))
-      if (ownerOf.has(e.id) && !synced.has(`${e.id}:${e.gameId}`))
-        baseById.set(e.id, (baseById.get(e.id) ?? 0) + e.g + e.a);
+    for (const e of feedPoints(day)) {
+      const b = beforeById.get(e.id);
+      if (b && !synced.has(`${e.id}:${e.gameId}`)) {
+        b.g += e.g;
+        b.a += e.a;
+      }
+    }
+  const baseById = new Map([...beforeById].map(([id, b]) => [id, b.g + b.a]));
 
   // Tonight, player by player
   const players: LiveData["players"] = {};
@@ -226,7 +239,12 @@ export function computeLive(input: {
   const pickTeam = new Map(draft.picks.map((p) => [p.id, p.team]));
   for (const id of ownerOf.keys()) {
     const team = lastTeam(id) ?? pickTeam.get(id) ?? null;
-    players[id] = { status: (team && stateByTeam.get(team)) || "none", g: 0, a: 0 };
+    players[id] = {
+      status: (team && stateByTeam.get(team)) || "none",
+      g: 0,
+      a: 0,
+      before: beforeById.get(id)!,
+    };
   }
   for (const e of feedPoints(tonight)) {
     const p = players[e.id];
@@ -343,4 +361,16 @@ export function computeLive(input: {
     ticker,
     players,
   };
+}
+
+// A player's season with tonight added: games, goals, assists and points as they stand right now
+export function livePlayer(p: PlayerLine, live: LiveData) {
+  const lp = live.players[p.id];
+  if (!lp) return { gp: p.gp, g: p.g, a: p.a, pts: p.pts, tonight: null };
+  const g = lp.before.g + lp.g;
+  const a = lp.before.a + lp.a;
+  // Tonight's game counts as played once it starts, unless the sync already stored it
+  const synced = !!(p.lastGame && live.date && p.lastGame.date >= live.date);
+  const playing = lp.status === "live" || lp.status === "done";
+  return { gp: p.gp + (playing && !synced ? 1 : 0), g, a, pts: g + a, tonight: lp };
 }

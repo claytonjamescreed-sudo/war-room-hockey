@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Minus } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Minus } from "lucide-react";
+import { Fragment, useState } from "react";
 import { LiveTonight } from "@/components/live-tonight";
+import { TeamRoster } from "@/components/team-roster";
 import { fmtDate, liveQuery, seasonQuery } from "@/lib/season-query";
 
 export const Route = createFileRoute("/")({
@@ -79,6 +81,16 @@ function Standings() {
     );
   const leader = Math.max(0, ...rows.map((r) => r.pts));
   const moveTitle = scoredTonight ? "tonight" : "since the day before";
+  // Teams opened to show their players
+  const [open, setOpen] = useState<Set<number>>(() => new Set());
+  const toggle = (slot: number) =>
+    setOpen((o) => {
+      const next = new Set(o);
+      if (next.has(slot)) next.delete(slot);
+      else next.add(slot);
+      return next;
+    });
+  const cols = live.anyGames ? 8 : 7;
   return (
     <main className="mx-auto max-w-6xl px-3 py-6 sm:px-4">
       <LiveTonight live={live} />
@@ -90,6 +102,7 @@ function Standings() {
             : `Through ${fmtDate(data.lastDate, { weekday: "short", month: "short", day: "numeric" })} · ${data.gameDays} game day${data.gameDays === 1 ? "" : "s"}`}
         </p>
       </div>
+      <p className="mb-2 text-muted-foreground">Tap a team to see its players.</p>
       <div className="overflow-x-auto rounded-md border bg-card">
         <table className="w-full min-w-[700px] text-left">
           <thead className="bg-muted text-sm uppercase tracking-wider text-muted-foreground">
@@ -106,54 +119,80 @@ function Standings() {
           </thead>
           <tbody>
             {rows.map(({ t, lt, pts, rank, prev }) => (
-              <tr key={t.slot} className="border-t">
-                <td className="px-3 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="num w-7 text-2xl font-bold">{rank}</span>
-                    <Move rank={rank} prev={prev} title={moveTitle} />
-                  </div>
-                </td>
-                <td className="px-3 py-3">
-                  <Link
-                    to="/teams/$slot"
-                    params={{ slot: String(t.slot) }}
-                    className="text-lg font-semibold hover:underline"
-                  >
-                    {t.name}
-                  </Link>
-                  {live.anyGames && lt && (lt.toPlay > 0 || lt.playing > 0) && (
-                    <div className="text-sm text-muted-foreground">
-                      {[
-                        lt.playing ? `${lt.playing} playing now` : "",
-                        lt.toPlay ? `${lt.toPlay} still to play` : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
+              <Fragment key={t.slot}>
+                <tr className={`border-t ${open.has(t.slot) ? "bg-muted/50" : ""}`}>
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="num w-7 text-2xl font-bold">{rank}</span>
+                      <Move rank={rank} prev={prev} title={moveTitle} />
                     </div>
-                  )}
-                </td>
-                <td className="num px-3 py-3 text-right text-3xl font-extrabold">{pts}</td>
-                {live.anyGames && (
-                  <td className="num px-3 py-3 text-right text-xl">
-                    {lt?.tonight ? (
-                      <span className="rounded bg-gold px-2 py-0.5 font-bold text-accent-foreground">
-                        +{lt.tonight}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">–</span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <button
+                      onClick={() => toggle(t.slot)}
+                      aria-expanded={open.has(t.slot)}
+                      aria-controls={`roster-${t.slot}`}
+                      className="flex items-center gap-1.5 text-left text-lg font-semibold hover:underline"
+                    >
+                      {t.name}
+                      <ChevronDown
+                        className={`h-5 w-5 shrink-0 transition-transform ${open.has(t.slot) ? "rotate-180" : ""}`}
+                        aria-hidden
+                      />
+                    </button>
+                    {live.anyGames && lt && (lt.toPlay > 0 || lt.playing > 0) && (
+                      <div className="text-sm text-muted-foreground">
+                        {[
+                          lt.playing ? `${lt.playing} playing now` : "",
+                          lt.toPlay ? `${lt.toPlay} still to play` : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </div>
                     )}
                   </td>
+                  <td className="num px-3 py-3 text-right text-3xl font-extrabold">{pts}</td>
+                  {live.anyGames && (
+                    <td className="num px-3 py-3 text-right text-xl">
+                      {lt?.tonight ? (
+                        <span className="rounded bg-gold px-2 py-0.5 font-bold text-accent-foreground">
+                          +{lt.tonight}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">–</span>
+                      )}
+                    </td>
+                  )}
+                  <td className="num px-3 py-3 text-right text-xl">{t.lastNight || "–"}</td>
+                  <td className="num px-3 py-3 text-right text-xl">{t.last7}</td>
+                  <td className="num px-3 py-3 text-right text-xl text-muted-foreground">
+                    {leader - pts || "–"}
+                  </td>
+                  <td className="px-3 py-3 text-right">
+                    <div className="num text-xl font-bold">{t.projected}</div>
+                    <div className="text-xs text-muted-foreground">draft {t.preseason}</div>
+                  </td>
+                </tr>
+                {open.has(t.slot) && (
+                  <tr id={`roster-${t.slot}`} className="bg-muted/50">
+                    <td colSpan={cols} className="px-2 pb-4 pt-0">
+                      {/* Pinned to the visible width, so on a phone it doesn't scroll with the table */}
+                      <div className="sticky left-2 max-w-[calc(100vw-2.5rem)] overflow-x-auto rounded-md border bg-card sm:max-w-none">
+                        <TeamRoster team={t} live={live} />
+                        <div className="border-t px-3 py-2 text-right">
+                          <Link
+                            to="/teams/$slot"
+                            params={{ slot: String(t.slot) }}
+                            className="font-semibold underline"
+                          >
+                            Full team page →
+                          </Link>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
                 )}
-                <td className="num px-3 py-3 text-right text-xl">{t.lastNight || "–"}</td>
-                <td className="num px-3 py-3 text-right text-xl">{t.last7}</td>
-                <td className="num px-3 py-3 text-right text-xl text-muted-foreground">
-                  {leader - pts || "–"}
-                </td>
-                <td className="px-3 py-3 text-right">
-                  <div className="num text-xl font-bold">{t.projected}</div>
-                  <div className="text-xs text-muted-foreground">draft {t.preseason}</div>
-                </td>
-              </tr>
+              </Fragment>
             ))}
           </tbody>
         </table>

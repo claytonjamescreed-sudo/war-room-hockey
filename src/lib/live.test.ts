@@ -131,7 +131,7 @@ describe("computeLive", () => {
     expect(bees.tonight).toBe(1);
     expect(aces.total).toBe(4);
     expect(aces.rank).toBe(1);
-    expect(live.players[1]).toEqual({ status: "live", g: 1, a: 1 });
+    expect(live.players[1]).toEqual({ status: "live", g: 1, a: 1, before: { g: 1, a: 1 } });
     expect(live.players[4]!.status).toBe("upcoming");
     expect(aces.playing).toBe(1);
     expect(aces.toPlay).toBe(1);
@@ -186,6 +186,10 @@ describe("computeLive", () => {
     });
     expect(live.teams.find((t) => t.name === "Aces")!.base).toBe(2);
     expect(live.teams.find((t) => t.name === "Bees")!.base).toBe(3);
+    // Per player too: Aardvark's synced game once, Beaver's synced assist plus the unsynced one
+    expect(live.players[1]!.before).toEqual({ g: 1, a: 1 });
+    expect(live.players[2]!.before).toEqual({ g: 0, a: 2 });
+    expect(live.players[3]!.before).toEqual({ g: 1, a: 0 });
     expect(live.anyGames).toBe(false);
   });
 

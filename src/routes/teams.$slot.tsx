@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { TeamRoster } from "@/components/team-roster";
 import { fmtDate, liveQuery, seasonQuery } from "@/lib/season-query";
-import type { LiveData } from "@/lib/live";
 
 export const Route = createFileRoute("/teams/$slot")({
   loader: async ({ context, params }) => {
@@ -65,59 +65,33 @@ function TeamPage() {
         </div>
       </div>
       <div className="mt-6 overflow-x-auto rounded-md border bg-card">
-        <table className="w-full min-w-[600px] text-left">
-          <thead className="bg-muted text-sm uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-3 py-3">Player</th>
-              <th className="px-3 py-3 text-right">GP</th>
-              <th className="px-3 py-3 text-right">G</th>
-              <th className="px-3 py-3 text-right">A</th>
-              <th className="px-3 py-3 text-right">P</th>
-              <th className="px-3 py-3">Last game</th>
-              <th className="px-3 py-3">Tonight</th>
-            </tr>
-          </thead>
-          <tbody>
-            {t.roster.map((p) => (
-              <tr key={p.id} className="border-t">
-                <td className="px-3 py-3">
-                  <div className="font-semibold">{p.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {p.team} · {p.pos}
-                  </div>
-                </td>
-                <td className="num px-3 py-3 text-right text-lg">{p.gp}</td>
-                <td className="num px-3 py-3 text-right text-lg">{p.g}</td>
-                <td className="num px-3 py-3 text-right text-lg">{p.a}</td>
-                <td className="num px-3 py-3 text-right text-2xl font-bold">{p.pts}</td>
-                <td className="px-3 py-3 text-sm">
-                  {p.lastGame
-                    ? `${fmtDate(p.lastGame.date)} ${p.lastGame.home ? "vs" : "@"} ${p.lastGame.opp}: ${p.lastGame.g}G ${p.lastGame.a}A`
-                    : "—"}
-                </td>
-                <td className="px-3 py-3 text-sm">
-                  <Tonight live={live} id={p.id} playsNext={p.playsNext} />
-                </td>
-              </tr>
-            ))}
-            {t.dropped.map((p) => (
-              <tr key={`d${p.id}`} className="border-t text-muted-foreground">
-                <td className="px-3 py-3">
-                  <div className="font-semibold line-through">{p.name}</div>
-                  <div className="text-sm">
-                    Dropped {fmtDate(p.droppedOn)} for {p.replacedBy}
-                  </div>
-                </td>
-                <td className="num px-3 py-3 text-right line-through">{p.gp}</td>
-                <td className="num px-3 py-3 text-right line-through">{p.g}</td>
-                <td className="num px-3 py-3 text-right line-through">{p.a}</td>
-                <td className="num px-3 py-3 text-right line-through">{p.pts}</td>
-                <td colSpan={2} />
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="min-w-[640px]">
+          <TeamRoster team={t} live={live} full />
+        </div>
       </div>
+      {t.dropped.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-2 text-2xl font-bold uppercase">Swapped out</h2>
+          <ul className="divide-y rounded-md border bg-card">
+            {t.dropped.map((p) => (
+              <li
+                key={p.id}
+                className="flex flex-wrap items-baseline justify-between gap-2 px-3 py-3 text-muted-foreground"
+              >
+                <span>
+                  <span className="font-semibold line-through">{p.name}</span>{" "}
+                  <span className="text-sm">
+                    dropped {fmtDate(p.droppedOn)} for {p.replacedBy}
+                  </span>
+                </span>
+                <span className="num line-through">
+                  {p.gp} GP · {p.g}G {p.a}A · {p.pts} P
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <p className="mt-3 text-sm text-muted-foreground">
         Draft-day projection: {t.preseason} points.
       </p>
@@ -132,35 +106,4 @@ function Stat({ label, value }: { label: string; value: number }) {
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>
   );
-}
-
-function Tonight({ live, id, playsNext }: { live: LiveData; id: number; playsNext: boolean }) {
-  const p = live.players[id];
-  if (!live.anyGames || !p) {
-    return playsNext ? (
-      <span className="rounded bg-gold px-2 py-1 font-semibold text-accent-foreground">
-        Plays next
-      </span>
-    ) : (
-      <span className="text-muted-foreground">No game</span>
-    );
-  }
-  const line = p.g + p.a ? ` · ${p.g}G ${p.a}A` : "";
-  if (p.status === "live")
-    return (
-      <span className="rounded bg-red px-2 py-1 font-semibold text-white">Playing now{line}</span>
-    );
-  if (p.status === "upcoming")
-    return (
-      <span className="rounded bg-gold px-2 py-1 font-semibold text-accent-foreground">
-        Plays tonight
-      </span>
-    );
-  if (p.status === "done")
-    return (
-      <span className={p.g + p.a ? "font-bold" : "text-muted-foreground"}>
-        Done{line || " · no points"}
-      </span>
-    );
-  return <span className="text-muted-foreground">No game</span>;
 }

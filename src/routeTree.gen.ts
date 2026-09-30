@@ -17,6 +17,7 @@ import { Route as LeadersRouteImport } from './routes/leaders'
 import { Route as RaceRouteImport } from './routes/race'
 import { Route as RulesRouteImport } from './routes/rules'
 import { Route as TvRouteImport } from './routes/tv'
+import { Route as WhatsNewRouteImport } from './routes/whats-new'
 import { Route as TeamsSlotRouteImport } from './routes/teams.$slot'
 import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
 import { Route as ApiPublicCronSeedRouteImport } from './routes/api/public/cron/seed'
@@ -62,6 +63,11 @@ const TvRoute = TvRouteImport.update({
   path: '/tv',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WhatsNewRoute = WhatsNewRouteImport.update({
+  id: '/whats-new',
+  path: '/whats-new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TeamsSlotRoute = TeamsSlotRouteImport.update({
   id: '/teams/$slot',
   path: '/teams/$slot',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/race': typeof RaceRoute
   '/rules': typeof RulesRoute
   '/tv': typeof TvRoute
+  '/whats-new': typeof WhatsNewRoute
   '/teams/$slot': typeof TeamsSlotRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/api/public/cron/seed': typeof ApiPublicCronSeedRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/race': typeof RaceRoute
   '/rules': typeof RulesRoute
   '/tv': typeof TvRoute
+  '/whats-new': typeof WhatsNewRoute
   '/teams/$slot': typeof TeamsSlotRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/api/public/cron/seed': typeof ApiPublicCronSeedRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/race': typeof RaceRoute
   '/rules': typeof RulesRoute
   '/tv': typeof TvRoute
+  '/whats-new': typeof WhatsNewRoute
   '/teams/$slot': typeof TeamsSlotRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/api/public/cron/seed': typeof ApiPublicCronSeedRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/race'
     | '/rules'
     | '/tv'
+    | '/whats-new'
     | '/teams/$slot'
     | '/api/public/version'
     | '/api/public/cron/seed'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/race'
     | '/rules'
     | '/tv'
+    | '/whats-new'
     | '/teams/$slot'
     | '/api/public/version'
     | '/api/public/cron/seed'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/race'
     | '/rules'
     | '/tv'
+    | '/whats-new'
     | '/teams/$slot'
     | '/api/public/version'
     | '/api/public/cron/seed'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   RaceRoute: typeof RaceRoute
   RulesRoute: typeof RulesRoute
   TvRoute: typeof TvRoute
+  WhatsNewRoute: typeof WhatsNewRoute
   TeamsSlotRoute: typeof TeamsSlotRoute
   ApiPublicVersionRoute: typeof ApiPublicVersionRoute
   ApiPublicCronSeedRoute: typeof ApiPublicCronSeedRoute
@@ -244,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TvRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/whats-new': {
+      id: '/whats-new'
+      path: '/whats-new'
+      fullPath: '/whats-new'
+      preLoaderRoute: typeof WhatsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/teams/$slot': {
       id: '/teams/$slot'
       path: '/teams/$slot'
@@ -284,6 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   RaceRoute: RaceRoute,
   RulesRoute: RulesRoute,
   TvRoute: TvRoute,
+  WhatsNewRoute: WhatsNewRoute,
   TeamsSlotRoute: TeamsSlotRoute,
   ApiPublicVersionRoute: ApiPublicVersionRoute,
   ApiPublicCronSeedRoute: ApiPublicCronSeedRoute,

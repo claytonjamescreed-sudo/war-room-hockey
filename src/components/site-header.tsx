@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { builtAt, CURRENT, fmtBuilt } from "@/lib/release";
 import { InstallButton } from "./install-button";
 
 const nav = [
@@ -112,16 +113,27 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const built = builtAt(__APP_BUILD__);
   return (
-    <footer className="mx-auto flex max-w-6xl gap-4 px-4 pb-8 pt-4 text-sm text-muted-foreground">
+    <footer className="mx-auto flex max-w-6xl flex-wrap gap-x-4 gap-y-1 px-4 pb-8 pt-4 text-sm text-muted-foreground">
       <Link to="/tv" className="hover:underline">
         TV board
       </Link>
       <Link to="/admin" className="hover:underline">
         Commissioner
       </Link>
-      {/* Which published version this page is running, to compare after "Update now" */}
-      <span className="num ml-auto">Version {__APP_BUILD__}</span>
+      <Link to="/whats-new" className="hover:underline">
+        What's new
+      </Link>
+      {/* Which published version this page is running: the release, and the build (the same one
+          "Update now" compares, so after an update it shows the page moved to the new build) */}
+      <Link
+        to="/whats-new"
+        className="num ml-auto hover:underline"
+        title={built ? `Built ${fmtBuilt(built)}` : undefined}
+      >
+        v{CURRENT.version} · build {__APP_BUILD__}
+      </Link>
     </footer>
   );
 }

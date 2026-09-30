@@ -9,6 +9,7 @@
 import { useRouterState } from "@tanstack/react-router";
 import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CURRENT } from "@/lib/release";
 
 const EVERY = 2 * 60_000;
 const MIN_GAP = 10_000;
@@ -21,6 +22,8 @@ function update() {
 
 export function UpdateNotice() {
   const [ready, setReady] = useState(false);
+  // The new build's release, when it's a different version from this page's
+  const [next, setNext] = useState<string | null>(null);
   const lastCheck = useRef(0);
   const href = useRouterState({ select: (s) => s.location.href });
 
@@ -30,8 +33,11 @@ export function UpdateNotice() {
     try {
       const res = await fetch("/api/public/version", { cache: "no-store", credentials: "omit" });
       if (!res.ok) return;
-      const { build } = (await res.json()) as { build?: string };
-      if (build && build !== __APP_BUILD__) setReady(true);
+      const { build, version } = (await res.json()) as { build?: string; version?: string };
+      if (build && build !== __APP_BUILD__) {
+        if (version && version !== CURRENT.version) setNext(version);
+        setReady(true);
+      }
     } catch {
       // offline or mid-deploy: try again next time
     }
@@ -66,7 +72,9 @@ export function UpdateNotice() {
       <RefreshCw className="h-6 w-6 shrink-0" aria-hidden />
       <span className="leading-tight">
         <span className="block text-lg font-bold uppercase tracking-wide">Update now</span>
-        <span className="block text-sm opacity-90">A new version of the site is ready</span>
+        <span className="block text-sm opacity-90">
+          {next ? `Version ${next} is ready` : "A new version of the site is ready"}
+        </span>
       </span>
     </button>
   );

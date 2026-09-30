@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+import { InstallButton } from "./install-button";
 
 const nav = [
   { to: "/", label: "Standings" },
@@ -72,6 +73,7 @@ export function SiteHeader() {
             Team Lockers
           </Link>
         </nav>
+        <InstallButton />
         <button
           onClick={toggle}
           aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}

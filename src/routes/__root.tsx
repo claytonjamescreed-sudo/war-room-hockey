@@ -81,9 +81,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "War Room — Hockey Pool" },
-      { name: "description", content: "Standings and live points for our 15-team NHL hockey pool." },
+      {
+        name: "description",
+        content: "Standings and live points for our 15-team NHL hockey pool.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      // Saved to a phone's home screen it opens full screen as "War Room" (see install-button.tsx)
+      { name: "theme-color", content: "#15130F" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "War Room" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black" },
     ],
     links: [
       {
@@ -91,6 +100,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

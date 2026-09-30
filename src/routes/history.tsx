@@ -71,13 +71,28 @@ function History() {
       {!lockers && <Hero latest={latest} older={older} />}
       <main className="mx-auto max-w-6xl px-3 pb-16 pt-6 sm:px-4">
         {lockers ? (
-          <>
-            <h1 className="mb-4 text-4xl font-extrabold uppercase sm:text-5xl">Team lockers</h1>
-            <Lockers
-              team={search.team}
-              onTeam={(team) => navigate({ search: { view: "teams", team }, replace: true })}
-            />
-          </>
+          search.team && locker(search.team) ? (
+            <>
+              <button
+                onClick={() => navigate({ search: { view: "teams" } })}
+                className="mb-4 font-semibold text-muted-foreground hover:underline"
+              >
+                ← All teams
+              </button>
+              <Locker team={search.team} />
+            </>
+          ) : (
+            <>
+              <h1 className="mb-2 text-4xl font-extrabold uppercase sm:text-5xl">Team lockers</h1>
+              <p className="mb-5 text-lg text-muted-foreground">Tap a team to open its locker.</p>
+              <TeamList
+                onTeam={(team) => {
+                  navigate({ search: { view: "teams", team } });
+                  window.scrollTo({ top: 0 });
+                }}
+              />
+            </>
+          )
         ) : (
           <Podiums
             all={all}
@@ -400,10 +415,45 @@ function Podiums({ all, onTeam }: { all: Pool[]; onTeam: (team: string) => void 
 
 // ---------- team lockers ----------
 
-function Lockers({ team, onTeam }: { team?: string | undefined; onTeam: (team: string) => void }) {
-  const names = teamNames();
-  const current = team && names.includes(team) ? team : names[0]!;
-  const l = locker(current)!;
+// Every team that has played in the pool, A to Z, with its titles and podiums
+function TeamList({ onTeam }: { onTeam: (team: string) => void }) {
+  const teams = teamNames()
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }))
+    .map((t) => locker(t)!);
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {teams.map((l) => (
+        <li key={l.team}>
+          <button
+            onClick={() => onTeam(l.team)}
+            className="flex h-full w-full items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3.5 text-left shadow-sm hover:border-foreground"
+          >
+            <span className="min-w-0">
+              <span className="block font-display text-2xl font-extrabold uppercase leading-tight">
+                {l.team}
+              </span>
+              <span className="block text-sm text-muted-foreground">
+                {l.rows.length} pool{l.rows.length > 1 ? "s" : ""} · {l.podiums} podium
+                {l.podiums === 1 ? "" : "s"} · best {place(l.best)}
+              </span>
+            </span>
+            {l.titles.length > 0 && (
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-1 text-sm font-bold text-black ${MEDAL[1]}`}
+                title={l.titles.map((c) => poolName(c)).join(", ")}
+              >
+                {l.titles.length} title{l.titles.length > 1 ? "s" : ""}
+              </span>
+            )}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Locker({ team }: { team: string }) {
+  const l = locker(team)!;
   const tiles: [string, string | number, string][] = [
     [
       "Championships",
@@ -454,18 +504,6 @@ function Lockers({ team, onTeam }: { team?: string | undefined; onTeam: (team: s
   ];
   return (
     <section>
-      <label className="mb-4 flex flex-wrap items-center gap-3">
-        <span className={eyebrow}>Pick a team</span>
-        <select
-          value={current}
-          onChange={(e) => onTeam(e.target.value)}
-          className="max-w-full rounded-lg border-2 bg-card px-3.5 py-2.5 text-lg font-semibold"
-        >
-          {names.map((t) => (
-            <option key={t}>{t}</option>
-          ))}
-        </select>
-      </label>
       <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-4 bg-band px-5 py-5 text-[#F3EDE1]">
           <div>

@@ -1,7 +1,7 @@
 // When a newer version of the site has been published, an "Update now" button appears in the
 // bottom-right corner; tapping it reloads the page onto the new version. Open pages check when
 // they open, when they come back into view (switching tabs or apps, or the back button), as
-// people move around the site, and every couple of minutes, at most once a minute.
+// people move around the site, and every couple of minutes, at most once every 10 seconds.
 //
 // Lovable's hosting pins a browser to the version it loaded with a "__dpl" cookie, so requests
 // from an open page keep going to that version's server. The check leaves the cookie out to ask
@@ -11,7 +11,7 @@ import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const EVERY = 2 * 60_000;
-const MIN_GAP = 60_000;
+const MIN_GAP = 10_000;
 const PIN = "__dpl";
 
 function update() {

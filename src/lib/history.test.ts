@@ -4,6 +4,7 @@ import {
   historyName,
   hypeLine,
   locker,
+  lockerGroups,
   lockerSearch,
   margin,
   ord,
@@ -77,6 +78,44 @@ describe("pool history", () => {
     expect(historyName("Longhorn7007")).toBe("Longhorn");
     expect(historyName(" New Team ")).toBe("New Team");
     expect(lockerSearch("TW3")).toEqual({ view: "teams", team: "The Wheeler" });
+  });
+
+  it("splits the lockers into this season's teams and former teams", () => {
+    // The 2026-27 pool, as the standings name its teams
+    const pool = [
+      "ACE",
+      "Bzilla",
+      "TW3",
+      "Jean Guy",
+      "Team MTL",
+      "King Bob & Queen Marie",
+      "LiteMan",
+      "Unomas",
+      "Pickledish",
+      "Brayker",
+      "McCarthy's squad",
+      "Redlight",
+      "The Gunz",
+      "Rogersrabbits",
+      "Longhorn",
+    ];
+    const { current, former } = lockerGroups(pool);
+    expect(current).toHaveLength(15);
+    expect(current).toContain("The Wheeler");
+    expect(current).not.toContain("TW3");
+    expect(current).toEqual(
+      [...current].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })),
+    );
+    // Every team that ever played is in exactly one group
+    expect(former.filter((t) => current.includes(t))).toEqual([]);
+    expect(new Set([...current, ...former])).toEqual(new Set(teamNames()));
+    expect(former.length).toBeGreaterThan(0);
+    for (const t of former) expect(locker(t)).not.toBeNull();
+
+    // A team new this season joins the current group without a history
+    const withNew = lockerGroups([...pool, " Brand New "]);
+    expect(withNew.current).toContain("Brand New");
+    expect(withNew.former).toEqual(former);
   });
 
   it("places and ties", () => {

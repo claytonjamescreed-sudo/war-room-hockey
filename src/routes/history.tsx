@@ -10,6 +10,7 @@ import {
   hypeLine,
   KIND_NAME,
   locker,
+  lockerGroups,
   margin,
   ord,
   place,
@@ -17,7 +18,6 @@ import {
   poolName,
   pools,
   records,
-  teamNames,
   type Pool,
 } from "@/lib/history";
 import type { LiveData } from "@/lib/live";
@@ -465,30 +465,55 @@ function Lockers({
     const lt = live.teams.find((x) => x.slot === t.slot);
     return { name: historyName(t.name), rank: lt?.rank ?? t.rank, pts: lt?.total ?? t.pts };
   });
+  const groups = lockerGroups(standings.map((t) => t.name));
   return (
     <>
       <h1 className="mb-2 text-4xl font-extrabold uppercase sm:text-5xl">Team lockers</h1>
       <p className="mb-5 text-lg text-muted-foreground">Tap a team to open its locker.</p>
-      <TeamList season={season.season} standings={standings} onTeam={onTeam} />
+      <h2 className="mb-3 text-3xl font-extrabold uppercase">
+        This season <span className="text-muted-foreground">· {season.season}</span>
+      </h2>
+      <TeamList
+        names={groups.current}
+        season={season.season}
+        standings={standings}
+        onTeam={onTeam}
+      />
+      {groups.former.length > 0 && (
+        <section className="mt-10" aria-labelledby="former-h">
+          <h2 id="former-h" className="text-3xl font-extrabold uppercase">
+            Former teams
+          </h2>
+          <p className="mb-3 text-muted-foreground">
+            Out of the pool, not forgotten: their banners, records and past rosters stay in their
+            lockers.
+          </p>
+          <TeamList
+            names={groups.former}
+            season={season.season}
+            standings={standings}
+            onTeam={onTeam}
+          />
+        </section>
+      )}
     </>
   );
 }
 
-// Every team that has played in the pool, plus any new to it this season, A to Z, with its titles
-// and podiums and where it stands this season
+// A grid of lockers with each team's titles and podiums, and where it stands this season or the
+// last pool it played in
 function TeamList({
+  names,
   season,
   standings,
   onTeam,
 }: {
+  names: string[];
   season: string;
   standings: { name: string; rank: number; pts: number }[];
   onTeam: (team: string) => void;
 }) {
   const now = new Map(standings.map((t) => [t.name, t]));
-  const names = [...new Set([...teamNames(), ...now.keys()])].sort((a, b) =>
-    a.localeCompare(b, undefined, { sensitivity: "base" }),
-  );
   return (
     <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {names.map((name) => {
@@ -510,10 +535,16 @@ function TeamList({
                     ? `${l.rows.length} pool${l.rows.length > 1 ? "s" : ""} · ${l.podiums} podium${l.podiums === 1 ? "" : "s"} · best ${place(l.best)}`
                     : "First season in the pool"}
                 </span>
-                {c && (
+                {c ? (
                   <span className="block text-sm font-semibold">
                     {season}: {ord(c.rank)} · <span className="num">{c.pts}</span> pts
                   </span>
+                ) : (
+                  l && (
+                    <span className="block text-sm font-semibold">
+                      Last pool: {poolName(l.rows[0]!)}
+                    </span>
+                  )
                 )}
               </span>
               {l && l.titles.length > 0 && (

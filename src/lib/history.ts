@@ -61,6 +61,19 @@ export function teamNames(finishes: Finish[] = FINISHES) {
   return [...count].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t]) => t);
 }
 
+// The Team Lockers list: this season's teams (new ones included), then the teams no longer in the
+// pool, whose lockers stay open. Both A to Z.
+export function lockerGroups(currentNames: string[], finishes: Finish[] = FINISHES) {
+  const az = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base" });
+  const now = new Set(currentNames.map((n) => historyName(n, finishes)));
+  return {
+    current: [...now].sort(az),
+    former: teamNames(finishes)
+      .filter((t) => !now.has(t))
+      .sort(az),
+  };
+}
+
 const avg = (a: number[]) =>
   a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null;
 

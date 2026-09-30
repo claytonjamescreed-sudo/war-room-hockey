@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicCronSeedRouteImport } from './routes/api/public/cron/seed'
+import { Route as ApiPublicCronSyncRouteImport } from './routes/api/public/cron/sync'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCronSeedRoute = ApiPublicCronSeedRouteImport.update({
+  id: '/api/public/cron/seed',
+  path: '/api/public/cron/seed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCronSyncRoute = ApiPublicCronSyncRouteImport.update({
+  id: '/api/public/cron/sync',
+  path: '/api/public/cron/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/cron/seed': typeof ApiPublicCronSeedRoute
+  '/api/public/cron/sync': typeof ApiPublicCronSyncRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/cron/seed': typeof ApiPublicCronSeedRoute
+  '/api/public/cron/sync': typeof ApiPublicCronSyncRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/cron/seed': typeof ApiPublicCronSeedRoute
+  '/api/public/cron/sync': typeof ApiPublicCronSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/public/cron/seed' | '/api/public/cron/sync'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/public/cron/seed' | '/api/public/cron/sync'
+  id: '__root__' | '/' | '/api/public/cron/seed' | '/api/public/cron/sync'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicCronSeedRoute: typeof ApiPublicCronSeedRoute
+  ApiPublicCronSyncRoute: typeof ApiPublicCronSyncRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/seed': {
+      id: '/api/public/cron/seed'
+      path: '/api/public/cron/seed'
+      fullPath: '/api/public/cron/seed'
+      preLoaderRoute: typeof ApiPublicCronSeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/sync': {
+      id: '/api/public/cron/sync'
+      path: '/api/public/cron/sync'
+      fullPath: '/api/public/cron/sync'
+      preLoaderRoute: typeof ApiPublicCronSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicCronSeedRoute: ApiPublicCronSeedRoute,
+  ApiPublicCronSyncRoute: ApiPublicCronSyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

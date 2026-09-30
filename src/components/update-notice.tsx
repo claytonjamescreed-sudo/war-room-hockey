@@ -1,38 +1,52 @@
 // When a newer version of the site has been published, an "Update now" button appears in the
 // bottom-right corner; tapping it reloads the page onto the new version. Open pages check when
-// they come back into view and every few minutes.
+// they open, when they come back into view (switching tabs or apps, or the back button), as
+// people move around the site, and every couple of minutes, at most once a minute.
+import { useRouterState } from "@tanstack/react-router";
 import { RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-const EVERY = 5 * 60_000;
+const EVERY = 2 * 60_000;
+const MIN_GAP = 60_000;
 
 export function UpdateNotice() {
   const [ready, setReady] = useState(false);
+  const lastCheck = useRef(0);
+  const href = useRouterState({ select: (s) => s.location.href });
+
+  const check = useCallback(async () => {
+    if (document.hidden || Date.now() - lastCheck.current < MIN_GAP) return;
+    lastCheck.current = Date.now();
+    try {
+      const res = await fetch("/api/public/version", { cache: "no-store" });
+      if (!res.ok) return;
+      const { build } = (await res.json()) as { build?: string };
+      if (build && build !== __APP_BUILD__) setReady(true);
+    } catch {
+      // offline or mid-deploy: try again next time
+    }
+  }, []);
+
   useEffect(() => {
     if (ready) return;
-    const check = async () => {
-      if (document.hidden) return;
-      try {
-        const res = await fetch("/api/public/version", { cache: "no-store" });
-        if (!res.ok) return;
-        const { build } = (await res.json()) as { build?: string };
-        if (build && build !== __APP_BUILD__) setReady(true);
-      } catch {
-        // offline or mid-deploy: try again next time
-      }
-    };
-    const onShow = () => {
-      if (!document.hidden) check();
-    };
-    const timer = setInterval(check, EVERY);
+    const onShow = () => void check();
+    const timer = setInterval(onShow, EVERY);
     document.addEventListener("visibilitychange", onShow);
     window.addEventListener("focus", onShow);
+    window.addEventListener("pageshow", onShow);
     return () => {
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onShow);
       window.removeEventListener("focus", onShow);
+      window.removeEventListener("pageshow", onShow);
     };
-  }, [ready]);
+  }, [ready, check]);
+
+  // On opening, and on every move to another page
+  useEffect(() => {
+    if (!ready) void check();
+  }, [href, ready, check]);
+
   if (!ready) return null;
   return (
     <button

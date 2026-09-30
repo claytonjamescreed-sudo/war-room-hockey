@@ -17,3 +17,4 @@
 - Projections/ESPN/injury/linemate data live only in `player_model`/`model_meta` (admin-only RLS); public `players` has safe columns. Why: War Room strategy must never reach public pages.
 - Seed JSON lives in `src/data/seed/` and is imported only from `*.server.ts`. Why: keep private model data out of client bundles.
 - Admin role is granted by `claim_admin()` for emails in `admin_emails`. Why: roles in a separate table, no client-side checks.
+- Live points come from `src/lib/live.ts` (pure, tested in `live.test.ts`) on NHL.com's score feed: synced points before tonight + feed points for games not yet in `player_games` (matched by game id) + tonight. Shootout goals never count. Why: live totals must equal the synced totals once the morning sync runs.

@@ -10,7 +10,8 @@ export function publicClient() {
     global: {
       fetch: (input, init) => {
         const h = new Headers(init?.headers);
-        if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) h.delete("Authorization");
+        if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`)
+          h.delete("Authorization");
         h.set("apikey", key);
         return fetch(input, { ...init, headers: h });
       },
@@ -21,7 +22,11 @@ export function publicClient() {
 type Client = ReturnType<typeof publicClient>;
 
 export async function loadLeague(sb: Client) {
-  const { data: season, error } = await sb.from("seasons").select("*").eq("is_current", true).single();
+  const { data: season, error } = await sb
+    .from("seasons")
+    .select("*")
+    .eq("is_current", true)
+    .single();
   if (error || !season) throw new Error("No current season");
   const [teams, picks, moves] = await Promise.all([
     sb.from("pool_teams").select("slot,name").eq("season_id", season.id).order("slot"),
@@ -56,7 +61,9 @@ export async function loadLeague(sb: Client) {
       inName: m.in_name,
     })),
   };
-  const ids = [...new Set([...draft.picks.map((p) => p.id), ...setup.moves.flatMap((m) => [m.out, m.in])])];
+  const ids = [
+    ...new Set([...draft.picks.map((p) => p.id), ...setup.moves.flatMap((m) => [m.out, m.in])]),
+  ];
   return { season, draft, setup, ids };
 }
 
@@ -85,4 +92,21 @@ export async function loadLogs(sb: Client, ids: number[]) {
     if (!data || data.length < pageSize) break;
   }
   return logs;
+}
+
+// League and synced game logs, shared by the standings and live functions for a minute
+let leagueMemo: {
+  at: number;
+  data: Promise<Awaited<ReturnType<typeof loadLeague>> & { logs: Record<number, GameLine[]> }>;
+} | null = null;
+export function leagueWithLogs() {
+  if (leagueMemo && Date.now() - leagueMemo.at < 60_000) return leagueMemo.data;
+  const data = (async () => {
+    const sb = publicClient();
+    const league = await loadLeague(sb);
+    return { ...league, logs: await loadLogs(sb, league.ids) };
+  })();
+  leagueMemo = { at: Date.now(), data };
+  data.catch(() => (leagueMemo = null));
+  return data;
 }

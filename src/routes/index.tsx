@@ -1,24 +1,39 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "War Room — NHL Hockey Pool" },
+      {
+        name: "description",
+        content:
+          "War Room: live standings and draft headquarters for our 15-team NHL hockey pool.",
+      },
+      { property: "og:title", content: "War Room — NHL Hockey Pool" },
+      {
+        property: "og:description",
+        content:
+          "War Room: live standings and draft headquarters for our 15-team NHL hockey pool.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
+      <p className="text-xs font-semibold uppercase tracking-[0.4em] text-muted-foreground">
+        15-Team NHL Pool
+      </p>
+      <h1 className="mt-5 text-6xl font-black uppercase tracking-tight text-foreground sm:text-7xl">
+        War Room
+      </h1>
+      <p className="mt-5 max-w-md text-sm text-muted-foreground">
+        Standings and draft headquarters. Setup in progress.
+      </p>
+    </main>
   );
 }

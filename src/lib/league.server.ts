@@ -99,6 +99,14 @@ let leagueMemo: {
   at: number;
   data: Promise<Awaited<ReturnType<typeof loadLeague>> & { logs: Record<number, GameLine[]> }>;
 } | null = null;
+// Bumped when the commissioner changes the league, so cached standings are rebuilt
+let version = 0;
+export const cacheVersion = () => version;
+export function bustCaches() {
+  version++;
+  leagueMemo = null;
+}
+
 export function leagueWithLogs() {
   if (leagueMemo && Date.now() - leagueMemo.at < 60_000) return leagueMemo.data;
   const data = (async () => {

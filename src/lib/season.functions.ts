@@ -2,12 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { LiveData } from "./live";
 
-let memo: { at: number; data: unknown } | null = null;
+let memo: { at: number; v: number; data: unknown } | null = null;
 
 export const getSeason = createServerFn({ method: "GET" }).handler(async () => {
-  if (memo && Date.now() - memo.at < 60_000) return memo.data as Awaited<ReturnType<typeof build>>;
+  const { cacheVersion } = await import("./league.server");
+  const v = cacheVersion();
+  if (memo && memo.v === v && Date.now() - memo.at < 60_000)
+    return memo.data as Awaited<ReturnType<typeof build>>;
   const data = await build();
-  memo = { at: Date.now(), data };
+  memo = { at: Date.now(), v, data };
   return data;
 });
 
@@ -62,9 +65,11 @@ export const getBoxscore = createServerFn({ method: "GET" })
 
 // Live points tonight: NHL.com's score feed on top of the synced standings. A feed failure
 // returns an empty night rather than breaking the page.
-let liveMemo: { at: number; data: Promise<LiveData> } | null = null;
+let liveMemo: { at: number; v: number; data: Promise<LiveData> } | null = null;
 export const getLive = createServerFn({ method: "GET" }).handler(async (): Promise<LiveData> => {
-  if (liveMemo && Date.now() - liveMemo.at < 20_000) return liveMemo.data;
+  const { cacheVersion } = await import("./league.server");
+  const v = cacheVersion();
+  if (liveMemo && liveMemo.v === v && Date.now() - liveMemo.at < 20_000) return liveMemo.data;
   const data = buildLive().catch((err): LiveData => {
     console.error("live tonight failed", err);
     return {
@@ -77,7 +82,7 @@ export const getLive = createServerFn({ method: "GET" }).handler(async (): Promi
       players: {},
     };
   });
-  liveMemo = { at: Date.now(), data };
+  liveMemo = { at: Date.now(), v, data };
   return data;
 });
 

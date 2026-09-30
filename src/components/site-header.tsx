@@ -59,3 +59,13 @@ export function SiteHeader() {
     </header>
   );
 }
+
+export function SiteFooter() {
+  return (
+    <footer className="mx-auto max-w-6xl px-4 pb-8 pt-4 text-sm text-muted-foreground">
+      <Link to="/admin" className="hover:underline">
+        Commissioner
+      </Link>
+    </footer>
+  );
+}

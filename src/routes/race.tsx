@@ -71,12 +71,12 @@ function Race() {
     <main className="mx-auto max-w-6xl px-3 py-6 sm:px-4">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <h1 className="text-5xl font-extrabold uppercase">The race</h1>
-        <label className="flex items-center gap-2 text-lg font-semibold">
+        <label className="flex max-w-full items-center gap-2 text-lg font-semibold">
           Highlight
           <select
             value={hi}
             onChange={(e) => navigate({ search: { team: Number(e.target.value) }, replace: true })}
-            className="rounded border bg-card px-3 py-2 text-lg"
+            className="min-w-0 rounded border bg-card px-3 py-2 text-lg"
           >
             {teams.map((t) => (
               <option key={t.slot} value={t.slot}>

@@ -1,0 +1,354 @@
+{
+ "asOf": "2026-09-25",
+ "about": "Skaters starting a big new contract (roughly $7M+ AAV, or at least double their old pay) in 2026-27. Researched from NHL.com, ESPN, TSN, Daily Faceoff and Pro Hockey Rumors. Left out on purpose: Connor McDavid (new deal, same $12.5M, no raise) and Jason Robertson (1-year deal, so he is playing for his next contract).",
+ "contracts": [
+  {
+   "name": "Leo Carlsson",
+   "team": "ANA",
+   "aav": 18.0,
+   "years": 5,
+   "type": "RFA re-sign",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/topic/free-agency/leo-carlsson-signs-5-year-contract-with-ducks-match-flyers-offer-sheet",
+   "note": "PHI offer sheet matched"
+  },
+  {
+   "name": "Kirill Kaprizov",
+   "team": "MIN",
+   "aav": 17.0,
+   "years": 8,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/kirill-kaprizov-signs-eight-year-136-million-contract-with-minnesota-wild"
+  },
+  {
+   "name": "Connor Bedard",
+   "team": "CHI",
+   "aav": 15.0,
+   "years": 5,
+   "type": "RFA re-sign",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/topic/free-agency/connor-bedard-signs-five-year-contract-with-chicago-blackhawks"
+  },
+  {
+   "name": "Adam Fantilli",
+   "team": "CBJ",
+   "aav": 13.75,
+   "years": 6,
+   "type": "RFA re-sign",
+   "newTeam": false,
+   "source": "https://www.tsn.ca/nhl/article/blue-jackets-sign-rfa-fantilli-to-six-year-825-million-contract/",
+   "note": "signed Sept 25 2026"
+  },
+  {
+   "name": "Jack Eichel",
+   "team": "VGK",
+   "aav": 13.5,
+   "years": 8,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/jack-eichel-signs-eight-year-contract-with-vegas-golden-knights"
+  },
+  {
+   "name": "Cutter Gauthier",
+   "team": "ANA",
+   "aav": 13.5,
+   "years": 6,
+   "type": "RFA re-sign",
+   "newTeam": false,
+   "source": "https://www.espn.com/nhl/story/_/id/49954010/anaheim-ducks-sign-cutter-gauthier-22-six-year-contract"
+  },
+  {
+   "name": "Kyle Connor",
+   "team": "WPG",
+   "aav": 12.0,
+   "years": 8,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/kyle-connor-signs-eight-year-contract-with-winnipeg-jets"
+  },
+  {
+   "name": "Martin Necas",
+   "team": "COL",
+   "aav": 11.5,
+   "years": 8,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.dailyfaceoff.com/news/colorado-avalanche-sign-martin-necas-eight-year-92-million-contract-11-5-cap-hit"
+  },
+  {
+   "name": "Artemi Panarin",
+   "team": "LAK",
+   "aav": 11.0,
+   "years": 2,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/artemi-panarin-traded-to-kings-by-rangers-signs-two-year-contract",
+   "note": "traded NYR->LAK Feb 2026"
+  },
+  {
+   "name": "Pavel Dorofeyev",
+   "team": "NYR",
+   "aav": 11.0,
+   "years": 7,
+   "type": "RFA re-sign",
+   "newTeam": true,
+   "source": "https://www.nhl.com/news/pavel-dorofeyev-signs-7-year-contract-with-new-york-rangers",
+   "note": "acquired from VGK June 26; up from ~$1.8M"
+  },
+  {
+   "name": "Adrian Kempe",
+   "team": "LAK",
+   "aav": 10.625,
+   "years": 8,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/adrian-kempe-signs-eight-year-contract-with-los-angeles-kings"
+  },
+  {
+   "name": "Thomas Harley",
+   "team": "DAL",
+   "aav": 10.587,
+   "years": 8,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/thomas-harley-signs-8-year-contract-with-dallas-stars"
+  },
+  {
+   "name": "Alex Tuch",
+   "team": "WSH",
+   "aav": 10.5,
+   "years": 8,
+   "type": "UFA signing",
+   "newTeam": true,
+   "source": "https://www.nhl.com/news/alex-tuch-traded-to-washington-capitals-by-buffalo-sabres",
+   "note": "sign-and-trade from BUF"
+  },
+  {
+   "name": "Logan Cooley",
+   "team": "UTA",
+   "aav": 10.0,
+   "years": 8,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/logan-cooley-signs-8-year-contract-with-utah-mammoth"
+  },
+  {
+   "name": "Trevor Zegras",
+   "team": "PHI",
+   "aav": 9.125,
+   "years": 4,
+   "type": "RFA re-sign",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/topic/free-agency/trevor-zegras-signs-4-year-contract-with-philadelphia-flyers"
+  },
+  {
+   "name": "Jackson LaCombe",
+   "team": "ANA",
+   "aav": 9.0,
+   "years": 8,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.espn.com/nhl/story/_/id/46467490/ducks-sign-jackson-lacombe-8-year-contract-extension"
+  },
+  {
+   "name": "Lane Hutson",
+   "team": "MTL",
+   "aav": 8.85,
+   "years": 8,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.espn.com/nhl/story/_/id/46582394/lane-hutson-agrees-8-year-708m-extension-canadiens"
+  },
+  {
+   "name": "John Carlson",
+   "team": "TBL",
+   "aav": 8.5,
+   "years": 2,
+   "type": "UFA signing",
+   "newTeam": true,
+   "source": "https://www.dailyfaceoff.com/news/2026-nhl-free-agency-tracker",
+   "note": "finished 2025-26 with ANA"
+  },
+  {
+   "name": "Darren Raddysh",
+   "team": "TOR",
+   "aav": 8.5,
+   "years": 8,
+   "type": "UFA signing",
+   "newTeam": true,
+   "source": "https://www.espn.com/nhl/story/_/id/49116063/source-leafs-acquire-lightning-raddysh-sign-trade",
+   "note": "sign-and-trade from TBL; up from $975K"
+  },
+  {
+   "name": "Rasmus Andersson",
+   "team": "VGK",
+   "aav": 8.5,
+   "years": 7,
+   "type": "UFA signing",
+   "newTeam": false,
+   "source": "https://www.espn.com/nhl/story/_/id/49240387/golden-knights-keep-rasmus-andersson-7-year-deal",
+   "note": "re-signed July 1; acquired from CGY Jan 2026"
+  },
+  {
+   "name": "Jacob Trouba",
+   "team": "SJS",
+   "aav": 8.25,
+   "years": 4,
+   "type": "UFA signing",
+   "newTeam": true,
+   "source": "https://www.dailyfaceoff.com/news/2026-nhl-free-agency-tracker"
+  },
+  {
+   "name": "Nick Schmaltz",
+   "team": "UTA",
+   "aav": 8.0,
+   "years": 8,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/utah/news/utah-signs-nick-schmaltz-to-eight-year-contract-extension-release-3-11-26"
+  },
+  {
+   "name": "Philip Broberg",
+   "team": "STL",
+   "aav": 8.0,
+   "years": 6,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/blues/news/broberg-signs-6-year-extension-with-blues"
+  },
+  {
+   "name": "Dylan Holloway",
+   "team": "STL",
+   "aav": 7.75,
+   "years": 5,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.prohockeyrumors.com/2026/05/blues-sign-dylan-holloway-to-five-year-extension.html"
+  },
+  {
+   "name": "Zach Benson",
+   "team": "BUF",
+   "aav": 7.5,
+   "years": 7,
+   "type": "RFA re-sign",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/zach-benson-signs-7-year-contract-with-buffalo-sabres"
+  },
+  {
+   "name": "Brandt Clarke",
+   "team": "LAK",
+   "aav": 7.4,
+   "years": 5,
+   "type": "RFA re-sign",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/brandt-clarke-signs-five-year-contract-with-los-angeles-kings"
+  },
+  {
+   "name": "Simon Nemec",
+   "team": "CGY",
+   "aav": 7.25,
+   "years": 5,
+   "type": "RFA re-sign",
+   "newTeam": true,
+   "source": "https://www.nhl.com/news/simon-nemec-signs-5-year-contract-with-calgary-flames",
+   "note": "acquired from NJD June 23"
+  },
+  {
+   "name": "Pavel Mintyukov",
+   "team": "ANA",
+   "aav": 7.2,
+   "years": 5,
+   "type": "RFA re-sign",
+   "newTeam": false,
+   "source": "https://www.espn.com/nhl/story/_/id/49281762/anaheim-ducks-re-sign-pavel-mintyukov-five-year-contract"
+  },
+  {
+   "name": "Jake Walman",
+   "team": "EDM",
+   "aav": 7.0,
+   "years": 7,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/oilers/news/release-oilers-sign-walman-to-seven-year-extension"
+  },
+  {
+   "name": "Mason Marchment",
+   "team": "SJS",
+   "aav": 6.75,
+   "years": 5,
+   "type": "UFA signing",
+   "newTeam": true,
+   "source": "https://www.dailyfaceoff.com/news/2026-nhl-free-agency-tracker",
+   "note": "from CBJ"
+  },
+  {
+   "name": "Frank Nazar",
+   "team": "CHI",
+   "aav": 6.59,
+   "years": 7,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/blackhawks/news/release-blackhawks-sign-frank-nazar-to-seven-year-contract-extension",
+   "note": "major raise from entry-level deal"
+  },
+  {
+   "name": "Egor Chinakhov",
+   "team": "PIT",
+   "aav": 6.25,
+   "years": 3,
+   "type": "RFA re-sign",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/egor-chinakhov-gets-3-year-deal-with-pittsburgh-penguins"
+  },
+  {
+   "name": "Logan Stankoven",
+   "team": "CAR",
+   "aav": 6.0,
+   "years": 8,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/hurricanes/news/canes-agree-to-terms-with-stankoven-on-eight-year-contract-extension",
+   "note": "major raise from entry-level deal"
+  },
+  {
+   "name": "Kiefer Sherwood",
+   "team": "SJS",
+   "aav": 5.75,
+   "years": 5,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/sharks/news/sharks-sign-forward-kiefer-sherwood-to-a-five-year-contract-extension",
+   "note": "up from $1.5M"
+  },
+  {
+   "name": "Bobby McMann",
+   "team": "SEA",
+   "aav": 5.75,
+   "years": 6,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/bobby-mcmann-signs-six-year-contract-with-seattle-kraken",
+   "note": "up from $1.35M"
+  },
+  {
+   "name": "Jackson Blake",
+   "team": "CAR",
+   "aav": 5.625,
+   "years": 8,
+   "type": "extension",
+   "newTeam": false,
+   "source": "https://www.nhl.com/news/jackson-blake-rewarded-with-8-year-contract-by-carolina-hurricanes"
+  },
+  {
+   "name": "Mavrik Bourque",
+   "team": "NSH",
+   "aav": 5.5,
+   "years": 6,
+   "type": "RFA re-sign",
+   "newTeam": true,
+   "source": "https://www.dailyfaceoff.com/news/2026-nhl-free-agency-tracker",
+   "note": "traded DAL->NSH July 1"
+  }
+ ]
+}

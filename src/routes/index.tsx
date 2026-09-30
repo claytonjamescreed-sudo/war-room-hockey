@@ -3,6 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ChevronDown, Minus } from "lucide-react";
 import { Fragment, useState } from "react";
 import { LiveTonight } from "@/components/live-tonight";
+import { NightBrief } from "@/components/night-brief";
 import { TeamLogo } from "@/components/team-logo";
 import { TeamRoster } from "@/components/team-roster";
 import { lockerSearch } from "@/lib/history";
@@ -96,6 +97,7 @@ function Standings() {
   return (
     <main className="mx-auto max-w-6xl px-3 py-6 sm:px-4">
       <LiveTonight live={live} />
+      <NightBrief data={data} />
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
         <h1 className="text-5xl font-extrabold uppercase">Standings</h1>
         <p className="text-muted-foreground">

@@ -1,0 +1,185 @@
+{
+  "source": "Fitted to the pool's OfficePools drafts, 2022-23 to 2025-26 (640 picks). Each lean is a small, shrunk adjustment to the pool's shared habits; with 10 picks a season they are hints, not rules.",
+  "teams": [
+    {
+      "name": "ACE",
+      "seasons": 4,
+      "lean": {
+        "list": 0.311,
+        "projLean": -0.021,
+        "D": -0.04,
+        "young": -0.077,
+        "vet": 0.002
+      },
+      "note": "sticks close to the list"
+    },
+    {
+      "name": "Bzilla",
+      "seasons": 1,
+      "lean": {
+        "list": 0.002,
+        "projLean": -0.135,
+        "D": -0.044,
+        "young": 0.032,
+        "vet": 0.035
+      },
+      "note": "goes by last season's points"
+    },
+    {
+      "name": "TW3",
+      "seasons": 1,
+      "lean": {
+        "list": 0.059,
+        "projLean": -0.126,
+        "D": 0.031,
+        "young": -0.004,
+        "vet": 0.038
+      },
+      "note": "goes by last season's points"
+    },
+    {
+      "name": "Jean Guy",
+      "seasons": 4,
+      "lean": {
+        "list": -0.166,
+        "projLean": 0.323,
+        "D": 0.028,
+        "young": 0.08,
+        "vet": -0.127
+      },
+      "note": "likes rookies and players coming off a short season, strays from the list more than most"
+    },
+    {
+      "name": "Team MTL",
+      "seasons": 2,
+      "lean": {
+        "list": -0.157,
+        "projLean": -0.031,
+        "D": 0.009,
+        "young": 0.011,
+        "vet": -0.025
+      },
+      "note": "strays from the list more than most"
+    },
+    {
+      "name": "King Bob & Queen Marie",
+      "seasons": 4,
+      "lean": {
+        "list": -0.071,
+        "projLean": 0.103,
+        "D": 0.125,
+        "young": 0.106,
+        "vet": 0.019
+      },
+      "note": "takes more defencemen, likes young players"
+    },
+    {
+      "name": "LiteMan",
+      "seasons": 4,
+      "lean": {
+        "list": 0.073,
+        "projLean": -0.117,
+        "D": -0.009,
+        "young": -0.014,
+        "vet": -0.06
+      },
+      "note": "drafts like the pool"
+    },
+    {
+      "name": "Unomas",
+      "seasons": 4,
+      "lean": {
+        "list": 0.104,
+        "projLean": -0.154,
+        "D": -0.075,
+        "young": 0.001,
+        "vet": 0.121
+      },
+      "note": "goes by last season's points, doesn't mind veterans"
+    },
+    {
+      "name": "Pickledish",
+      "seasons": 4,
+      "lean": {
+        "list": -0.128,
+        "projLean": -0.059,
+        "D": 0.052,
+        "young": -0.055,
+        "vet": -0.022
+      },
+      "note": "strays from the list more than most"
+    },
+    {
+      "name": "Brayker",
+      "seasons": 4,
+      "lean": {
+        "list": -0.048,
+        "projLean": 0.078,
+        "D": 0.055,
+        "young": -0.115,
+        "vet": 0.141
+      },
+      "note": "prefers established players, doesn't mind veterans"
+    },
+    {
+      "name": "McCarthy's squad",
+      "seasons": 1,
+      "lean": {
+        "list": 0.017,
+        "projLean": 0.017,
+        "D": -0.045,
+        "young": 0.103,
+        "vet": -0.073
+      },
+      "note": "likes young players"
+    },
+    {
+      "name": "Redlight",
+      "seasons": 4,
+      "lean": {
+        "list": 0.003,
+        "projLean": 0.068,
+        "D": 0.125,
+        "young": -0.027,
+        "vet": -0.079
+      },
+      "note": "takes more defencemen"
+    },
+    {
+      "name": "The Gunz",
+      "seasons": 4,
+      "lean": {
+        "list": 0.014,
+        "projLean": -0.124,
+        "D": -0.043,
+        "young": 0.083,
+        "vet": -0.024
+      },
+      "note": "likes young players, goes by last season's points"
+    },
+    {
+      "name": "Rogersrabbits",
+      "seasons": 4,
+      "lean": {
+        "list": 0.101,
+        "projLean": -0.012,
+        "D": -0.007,
+        "young": 0.018,
+        "vet": -0.06
+      },
+      "note": "sticks close to the list"
+    },
+    {
+      "name": "Longhorn",
+      "seasons": 4,
+      "lean": {
+        "list": 0.1,
+        "projLean": 0.106,
+        "D": 0.031,
+        "young": 0.008,
+        "vet": -0.024
+      },
+      "note": "sticks close to the list"
+    }
+  ]
+}

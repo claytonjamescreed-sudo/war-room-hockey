@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { FINISHES, STORIES } from "../data/history";
-import { hypeLine, locker, margin, ord, place, pools, records, teamNames } from "./history";
+import {
+  historyName,
+  hypeLine,
+  locker,
+  lockerSearch,
+  margin,
+  ord,
+  place,
+  pools,
+  records,
+  teamNames,
+} from "./history";
 
 describe("pool history", () => {
   it("has six regular seasons and six playoff pools, newest first", () => {
@@ -58,6 +69,14 @@ describe("pool history", () => {
     expect(hypeLine(locker("ACE")!)).toBe(
       "3-time champion. Everyone else is drafting to catch ACE.",
     );
+  });
+
+  it("finds the locker for this season's team names", () => {
+    expect(historyName("TW3")).toBe("The Wheeler");
+    expect(historyName("ace")).toBe("ACE");
+    expect(historyName("Longhorn7007")).toBe("Longhorn");
+    expect(historyName(" New Team ")).toBe("New Team");
+    expect(lockerSearch("TW3")).toEqual({ view: "teams", team: "The Wheeler" });
   });
 
   it("places and ties", () => {

@@ -286,6 +286,39 @@ export type Database = {
           },
         ]
       }
+      roster_archive: {
+        Row: {
+          dropped: Json
+          players: Json
+          points: number
+          rank: number
+          season_id: string
+          slot: number
+          team_name: string
+          updated_at: string
+        }
+        Insert: {
+          dropped?: Json
+          players: Json
+          points: number
+          rank: number
+          season_id: string
+          slot: number
+          team_name: string
+          updated_at?: string
+        }
+        Update: {
+          dropped?: Json
+          players?: Json
+          points?: number
+          rank?: number
+          season_id?: string
+          slot?: number
+          team_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       roster_moves: {
         Row: {
           created_at: string

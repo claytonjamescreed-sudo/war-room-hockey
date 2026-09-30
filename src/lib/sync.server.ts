@@ -36,10 +36,12 @@ export async function syncGameLogs(sb: Admin, ids: number[]) {
   return ids.length;
 }
 
-// Recompute every team's total for every game day since count_from and replace daily_totals
+// Recompute every team's total for every game day since count_from and replace daily_totals,
+// then save each team's roster to roster_archive for the lockers
 export async function rebuildDailyTotals(sb: Admin) {
   const { loadLeague, loadLogs } = await import("./league.server");
   const { computeSeason } = await import("./season");
+  const { archiveRows } = await import("./archive");
   const { season, draft, setup, ids } = await loadLeague(sb);
   const logs = await loadLogs(sb, ids);
   const data = computeSeason(draft, setup, {
@@ -65,6 +67,21 @@ export async function rebuildDailyTotals(sb: Admin) {
   for (let i = 0; i < totals.length; i += 1000) {
     const { error } = await sb.from("daily_totals").insert(totals.slice(i, i + 1000));
     if (error) throw new Error(error.message);
+  }
+  const rosters = archiveRows(season.id, data, draft, setup.moves).map((r) => ({
+    ...r,
+    updated_at: new Date().toISOString(),
+  }));
+  if (rosters.length) {
+    const up = await sb.from("roster_archive").upsert(rosters);
+    if (up.error) throw new Error(up.error.message);
+    // A team taken out of the season takes its row with it
+    const gone = await sb
+      .from("roster_archive")
+      .delete()
+      .eq("season_id", season.id)
+      .not("slot", "in", `(${rosters.map((r) => r.slot).join(",")})`);
+    if (gone.error) throw new Error(gone.error.message);
   }
   await sb.from("seasons").update({ last_synced_at: new Date().toISOString() }).eq("id", season.id);
   return {

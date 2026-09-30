@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, ChevronDown, Minus } from "lucide-react";
 import { Fragment, useState } from "react";
 import { LiveTonight } from "@/components/live-tonight";
 import { TeamRoster } from "@/components/team-roster";
+import { lockerSearch } from "@/lib/history";
 import { fmtDate, liveQuery, seasonQuery } from "@/lib/season-query";
 
 export const Route = createFileRoute("/")({
@@ -183,11 +184,11 @@ function Standings() {
                         <TeamRoster team={t} live={live} />
                         <div className="border-t px-3 py-2 text-right">
                           <Link
-                            to="/teams/$slot"
-                            params={{ slot: String(t.slot) }}
+                            to="/history"
+                            search={lockerSearch(t.name)}
                             className="font-semibold underline"
                           >
-                            Full team page →
+                            Team locker →
                           </Link>
                         </div>
                       </div>

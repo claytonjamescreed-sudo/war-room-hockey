@@ -97,6 +97,19 @@ export function locker(team: string, finishes: Finish[] = FINISHES) {
   };
 }
 
+// The locker a pool team's name belongs to, old spellings included ("TW3" is The Wheeler). A team
+// new to the pool gets a locker under its own name.
+export function historyName(name: string, finishes: Finish[] = FINISHES) {
+  const key = name.trim().toLowerCase();
+  const f =
+    finishes.find((x) => x.t.toLowerCase() === key) ??
+    finishes.find((x) => x.raw.toLowerCase() === key);
+  return f?.t ?? name.trim();
+}
+
+// Search params that open a team's locker
+export const lockerSearch = (name: string) => ({ view: "teams" as const, team: historyName(name) });
+
 // A line for a team with no written scouting report
 export function hypeLine(l: NonNullable<ReturnType<typeof locker>>) {
   const titles = l.titles.length;

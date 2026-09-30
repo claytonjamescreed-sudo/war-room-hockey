@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { lockerSearch } from "@/lib/history";
 import type { LiveData, TickerPerson } from "@/lib/live";
 import { fmtDate } from "@/lib/season-query";
 
@@ -17,8 +18,8 @@ function Who({ p }: { p: TickerPerson }) {
         <>
           {" "}
           <Link
-            to="/teams/$slot"
-            params={{ slot: String(p.slot) }}
+            to="/history"
+            search={lockerSearch(p.owner)}
             className="text-muted-foreground hover:underline"
           >
             ({p.owner})

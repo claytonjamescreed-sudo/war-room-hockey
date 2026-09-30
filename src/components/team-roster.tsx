@@ -43,7 +43,7 @@ export function TeamRoster({
 }: {
   team: SeasonTeam;
   live: LiveData;
-  // The team page adds games played and last game; the standings keep it short for phones
+  // The team locker adds games played and last game on wider screens; the standings keep it short
   full?: boolean;
 }) {
   // In the order the team drafted them
@@ -56,13 +56,13 @@ export function TeamRoster({
     <table className="w-full text-left">
       <thead className="text-sm uppercase tracking-wider text-muted-foreground">
         <tr>
-          <th className="px-3 py-2">Player</th>
-          {full && <th className="px-3 py-2 text-right">GP</th>}
-          <th className="px-3 py-2 text-right">G</th>
-          <th className="px-3 py-2 text-right">A</th>
-          <th className="px-3 py-2 text-right">P</th>
-          <th className="px-3 py-2">Tonight</th>
-          {full && <th className="px-3 py-2">Last game</th>}
+          <th className="px-2 py-2 sm:px-3">Player</th>
+          {full && <th className="hidden px-2 py-2 sm:px-3 text-right sm:table-cell">GP</th>}
+          <th className="px-2 py-2 sm:px-3 text-right">G</th>
+          <th className="px-2 py-2 sm:px-3 text-right">A</th>
+          <th className="px-2 py-2 sm:px-3 text-right">P</th>
+          <th className="px-2 py-2 sm:px-3">Tonight</th>
+          {full && <th className="hidden px-2 py-2 sm:px-3 sm:table-cell">Last game</th>}
         </tr>
       </thead>
       <tbody>
@@ -70,16 +70,21 @@ export function TeamRoster({
           const tonightPts = l.tonight ? l.tonight.g + l.tonight.a : 0;
           return (
             <tr key={p.id} className="border-t">
-              <td className="px-3 py-2">
+              <td className="px-2 py-2 sm:px-3">
                 <div className="font-semibold">{p.name}</div>
                 <div className="text-sm text-muted-foreground">
-                  {p.team} · {p.pos} · {round.get(p.id) != null ? `Rd ${round.get(p.id)}` : "Swap"}
+                  {p.team} · {p.pos} ·{" "}
+                  {round.get(p.id) != null ? `Rd\u00a0${round.get(p.id)}` : "Swap"}
                 </div>
               </td>
-              {full && <td className="num px-3 py-2 text-right text-lg">{l.gp}</td>}
-              <td className="num px-3 py-2 text-right text-lg">{l.g}</td>
-              <td className="num px-3 py-2 text-right text-lg">{l.a}</td>
-              <td className="num px-3 py-2 text-right">
+              {full && (
+                <td className="num hidden px-2 py-2 sm:px-3 text-right text-lg sm:table-cell">
+                  {l.gp}
+                </td>
+              )}
+              <td className="num px-2 py-2 sm:px-3 text-right text-lg">{l.g}</td>
+              <td className="num px-2 py-2 sm:px-3 text-right text-lg">{l.a}</td>
+              <td className="num px-2 py-2 sm:px-3 text-right">
                 <span className="text-2xl font-bold">{l.pts}</span>
                 {tonightPts > 0 && (
                   <span className="ml-1.5 rounded bg-gold px-1.5 py-0.5 align-middle text-sm font-bold text-accent-foreground">
@@ -87,11 +92,11 @@ export function TeamRoster({
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2">
+              <td className="px-2 py-2 sm:px-3">
                 <Tonight p={p} live={live} />
               </td>
               {full && (
-                <td className="px-3 py-2 text-sm">
+                <td className="hidden px-2 py-2 sm:px-3 text-sm sm:table-cell">
                   {p.lastGame
                     ? `${fmtDate(p.lastGame.date)} ${p.lastGame.home ? "vs" : "@"} ${p.lastGame.opp}: ${p.lastGame.g}G ${p.lastGame.a}A`
                     : "—"}

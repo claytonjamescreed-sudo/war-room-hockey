@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
+import { TeamRoster } from "@/components/team-roster";
 import type { Finish } from "@/data/history";
+import type { ArchivedRoster } from "@/lib/archive";
 import {
+  historyName,
   hypeLine,
   KIND_NAME,
   locker,
@@ -15,6 +19,9 @@ import {
   teamNames,
   type Pool,
 } from "@/lib/history";
+import type { LiveData } from "@/lib/live";
+import type { SeasonTeam } from "@/lib/season";
+import { archiveQuery, fmtDate, liveQuery, seasonQuery } from "@/lib/season-query";
 
 type Search = { view?: "teams"; team?: string };
 
@@ -40,6 +47,18 @@ export const Route = createFileRoute("/history")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  loaderDeps: ({ search }) => ({ lockers: search.view === "teams" }),
+  // The lockers show this season's rosters live; the banners and podiums need nothing
+  loader: async ({ context, deps }) => {
+    if (!deps.lockers) return;
+    await Promise.all([
+      context.queryClient.ensureQueryData(seasonQuery),
+      context.queryClient.ensureQueryData(liveQuery),
+    ]);
+  },
+  errorComponent: ({ error }) => (
+    <p className="p-8 text-lg">The team lockers didn't load: {error.message}</p>
+  ),
   component: History,
 });
 
@@ -66,41 +85,22 @@ function History() {
   const older = chrono.slice(0, -2);
   // The menu's History shows the banners and podiums; Team Lockers shows the lockers on their own
   const lockers = search.view === "teams";
+  const openTeam = (team: string) => {
+    navigate({ search: { view: "teams", team } });
+    window.scrollTo({ top: 0 });
+  };
   return (
     <>
       {!lockers && <Hero latest={latest} older={older} />}
       <main className="mx-auto max-w-6xl px-3 pb-16 pt-6 sm:px-4">
         {lockers ? (
-          search.team && locker(search.team) ? (
-            <>
-              <button
-                onClick={() => navigate({ search: { view: "teams" } })}
-                className="mb-4 font-semibold text-muted-foreground hover:underline"
-              >
-                ← All teams
-              </button>
-              <Locker team={search.team} />
-            </>
-          ) : (
-            <>
-              <h1 className="mb-2 text-4xl font-extrabold uppercase sm:text-5xl">Team lockers</h1>
-              <p className="mb-5 text-lg text-muted-foreground">Tap a team to open its locker.</p>
-              <TeamList
-                onTeam={(team) => {
-                  navigate({ search: { view: "teams", team } });
-                  window.scrollTo({ top: 0 });
-                }}
-              />
-            </>
-          )
-        ) : (
-          <Podiums
-            all={all}
-            onTeam={(team) => {
-              navigate({ search: { view: "teams", team } });
-              window.scrollTo({ top: 0 });
-            }}
+          <Lockers
+            team={search.team}
+            onTeam={openTeam}
+            onAll={() => navigate({ search: { view: "teams" } })}
           />
+        ) : (
+          <Podiums all={all} onTeam={openTeam} />
         )}
         <p className="mt-8 max-w-[75ch] text-sm text-muted-foreground">
           Points are official OfficePools totals. 2020-21 was the NHL's 56-game season, so its
@@ -415,46 +415,122 @@ function Podiums({ all, onTeam }: { all: Pool[]; onTeam: (team: string) => void 
 
 // ---------- team lockers ----------
 
-// Every team that has played in the pool, A to Z, with its titles and podiums
-function TeamList({ onTeam }: { onTeam: (team: string) => void }) {
-  const teams = teamNames()
-    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }))
-    .map((t) => locker(t)!);
+// The Team Lockers menu: the list of teams, or one team's locker. This season's rosters come
+// live from the standings; past seasons' rosters from the archive, loaded in the browser.
+function Lockers({
+  team,
+  onTeam,
+  onAll,
+}: {
+  team: string | undefined;
+  onTeam: (team: string) => void;
+  onAll: () => void;
+}) {
+  const { data: season } = useSuspenseQuery(seasonQuery);
+  const { data: live } = useSuspenseQuery(liveQuery);
+  const { data: archive = [] } = useQuery({ ...archiveQuery, enabled: !!team });
+  const current = team ? season.teams.find((t) => historyName(t.name) === team) : undefined;
+  const past = team ? archive.filter((r) => historyName(r.team_name) === team) : [];
+  if (team && (locker(team) || current || past.length))
+    return (
+      <>
+        <button
+          onClick={onAll}
+          className="mb-4 font-semibold text-muted-foreground hover:underline"
+        >
+          ← All teams
+        </button>
+        <Locker
+          team={team}
+          now={
+            current
+              ? {
+                  team: current,
+                  live,
+                  season: season.season,
+                  swapsLeft: Math.max(0, season.redraftSwaps - current.swapsUsed),
+                }
+              : null
+          }
+          past={past}
+          archive={archive}
+        />
+      </>
+    );
+  const standings = season.teams.map((t) => {
+    const lt = live.teams.find((x) => x.slot === t.slot);
+    return { name: historyName(t.name), rank: lt?.rank ?? t.rank, pts: lt?.total ?? t.pts };
+  });
+  return (
+    <>
+      <h1 className="mb-2 text-4xl font-extrabold uppercase sm:text-5xl">Team lockers</h1>
+      <p className="mb-5 text-lg text-muted-foreground">Tap a team to open its locker.</p>
+      <TeamList season={season.season} standings={standings} onTeam={onTeam} />
+    </>
+  );
+}
+
+// Every team that has played in the pool, plus any new to it this season, A to Z, with its titles
+// and podiums and where it stands this season
+function TeamList({
+  season,
+  standings,
+  onTeam,
+}: {
+  season: string;
+  standings: { name: string; rank: number; pts: number }[];
+  onTeam: (team: string) => void;
+}) {
+  const now = new Map(standings.map((t) => [t.name, t]));
+  const names = [...new Set([...teamNames(), ...now.keys()])].sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
+  );
   return (
     <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {teams.map((l) => (
-        <li key={l.team}>
-          <button
-            onClick={() => onTeam(l.team)}
-            className="flex h-full w-full items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3.5 text-left shadow-sm hover:border-foreground"
-          >
-            <span className="min-w-0">
-              <span className="block font-display text-2xl font-extrabold uppercase leading-tight">
-                {l.team}
+      {names.map((name) => {
+        const l = locker(name);
+        const c = now.get(name);
+        return (
+          <li key={name}>
+            <button
+              onClick={() => onTeam(name)}
+              className="flex h-full w-full items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3.5 text-left shadow-sm hover:border-foreground"
+            >
+              <span className="min-w-0">
+                <span className="block font-display text-2xl font-extrabold uppercase leading-tight">
+                  {name}
+                </span>
+                <span className="block text-sm text-muted-foreground">
+                  {l
+                    ? `${l.rows.length} pool${l.rows.length > 1 ? "s" : ""} · ${l.podiums} podium${l.podiums === 1 ? "" : "s"} · best ${place(l.best)}`
+                    : "First season in the pool"}
+                </span>
+                {c && (
+                  <span className="block text-sm font-semibold">
+                    {season}: {ord(c.rank)} · <span className="num">{c.pts}</span> pts
+                  </span>
+                )}
               </span>
-              <span className="block text-sm text-muted-foreground">
-                {l.rows.length} pool{l.rows.length > 1 ? "s" : ""} · {l.podiums} podium
-                {l.podiums === 1 ? "" : "s"} · best {place(l.best)}
-              </span>
-            </span>
-            {l.titles.length > 0 && (
-              <span
-                className={`shrink-0 rounded-full px-2.5 py-1 text-sm font-bold text-black ${MEDAL[1]}`}
-                title={l.titles.map((c) => poolName(c)).join(", ")}
-              >
-                {l.titles.length} title{l.titles.length > 1 ? "s" : ""}
-              </span>
-            )}
-          </button>
-        </li>
-      ))}
+              {l && l.titles.length > 0 && (
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-sm font-bold text-black ${MEDAL[1]}`}
+                  title={l.titles.map((c) => poolName(c)).join(", ")}
+                >
+                  {l.titles.length} title{l.titles.length > 1 ? "s" : ""}
+                </span>
+              )}
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
-function Locker({ team }: { team: string }) {
-  const l = locker(team)!;
-  const tiles: [string, string | number, string][] = [
+type LockerData = NonNullable<ReturnType<typeof locker>>;
+
+function historyTiles(l: LockerData): [string, string | number, string][] {
+  return [
     [
       "Championships",
       l.titles.length,
@@ -502,6 +578,23 @@ function Locker({ team }: { team: string }) {
     ],
     ["Avg finish", ord(l.avgFinish), "All pools entered"],
   ];
+}
+
+type Now = { team: SeasonTeam; live: LiveData; season: string; swapsLeft: number };
+
+// A team's locker: this season's roster, its history, and the rosters it drafted before
+function Locker({
+  team,
+  now,
+  past,
+  archive,
+}: {
+  team: string;
+  now: Now | null;
+  past: ArchivedRoster[];
+  archive: ArchivedRoster[];
+}) {
+  const l = locker(team);
   return (
     <section>
       <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
@@ -511,23 +604,26 @@ function Locker({ team }: { team: string }) {
               Team locker
             </div>
             <h2 className="font-display text-[clamp(38px,7vw,64px)] font-black uppercase leading-[0.95]">
-              {l.team}
+              {team}
             </h2>
-            {l.aka.length > 0 && (
+            {l && l.aka.length > 0 && (
               <div className="mt-2 text-sm text-[#CFC5B4]">Also played as {l.aka.join(", ")}</div>
             )}
           </div>
-          <div className="flex flex-wrap items-end gap-x-4 gap-y-3.5">
-            {l.titles.map((c) => (
-              <Trophy key={poolKey(c)} f={c} />
-            ))}
-            {l.medals.map((m) => (
-              <Trophy key={poolKey(m)} f={m} />
-            ))}
-          </div>
+          {l && (
+            <div className="flex flex-wrap items-end gap-x-4 gap-y-3.5">
+              {l.titles.map((c) => (
+                <Trophy key={poolKey(c)} f={c} />
+              ))}
+              {l.medals.map((m) => (
+                <Trophy key={poolKey(m)} f={m} />
+              ))}
+            </div>
+          )}
         </div>
+        {now && <ThisSeason team={team} now={now} />}
         <div className="border-b bg-gold/15 px-5 pb-5 pt-4">
-          {l.story ? (
+          {l?.story ? (
             <>
               <div className={`${eyebrow} !text-red`}>Scouting report</div>
               <div className="mt-1.5 font-display text-3xl font-extrabold uppercase leading-none">
@@ -536,67 +632,222 @@ function Locker({ team }: { team: string }) {
               <p className="mt-2 max-w-[70ch] text-lg">{l.story[1]}</p>
             </>
           ) : (
-            <p className="max-w-[70ch] text-lg">{hypeLine(l)}</p>
+            <p className="max-w-[70ch] text-lg">
+              {l
+                ? hypeLine(l)
+                : `New to the pool${now ? ` in ${now.season}` : ""}. Every dynasty starts with a draft.`}
+            </p>
           )}
         </div>
-        <div className="grid grid-cols-2 border-b md:grid-cols-4">
-          {tiles.map(([label, v, ctx]) => (
-            <div key={label} className="border-r border-t px-4 py-4 sm:px-5">
-              <div className={eyebrow}>{label}</div>
-              <div className="num mt-1.5 font-display text-4xl font-extrabold leading-none">
-                {v}
+        {l && (
+          <>
+            <div className="grid grid-cols-2 border-b md:grid-cols-4">
+              {historyTiles(l).map(([label, v, ctx]) => (
+                <div key={label} className="border-r border-t px-4 py-4 sm:px-5">
+                  <div className={eyebrow}>{label}</div>
+                  <div className="num mt-1.5 font-display text-4xl font-extrabold leading-none">
+                    {v}
+                  </div>
+                  <div className="mt-1 text-sm text-muted-foreground">{ctx}</div>
+                </div>
+              ))}
+            </div>
+            <div className="px-5 py-4">
+              <h3 className="mb-2.5 text-2xl font-extrabold uppercase">Finish by season</h3>
+              <div className="overflow-x-auto">
+                <FinishChart rows={l.rows} />
               </div>
-              <div className="mt-1 text-sm text-muted-foreground">{ctx}</div>
+            </div>
+            <div className="px-5 pb-5">
+              <h3 className="mb-2.5 text-2xl font-extrabold uppercase">Every pool</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="text-xs uppercase tracking-widest text-muted-foreground">
+                    <tr className="border-b-2">
+                      <th className="px-2.5 py-2">Season</th>
+                      <th className="px-2.5 py-2">Pool</th>
+                      <th className="px-2.5 py-2 text-right">Finish</th>
+                      <th className="px-2.5 py-2 text-right">Points</th>
+                      <th className="px-2.5 py-2 text-right">Gap to 1st</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {l.rows.map((f) => {
+                      const gap = l.gapToFirst(f);
+                      return (
+                        <tr key={poolKey(f)} className={`border-b ${f.r <= 3 ? "font-bold" : ""}`}>
+                          <td className="px-2.5 py-2">{f.s}</td>
+                          <td className="px-2.5 py-2">{KIND_NAME[f.k]}</td>
+                          <td className="num px-2.5 py-2 text-right">
+                            <span
+                              className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold ${f.r <= 3 ? `${MEDAL[f.r]} ${f.r === 1 ? "text-black" : "text-white"}` : "border bg-muted"}`}
+                            >
+                              {place(f)}
+                            </span>{" "}
+                            <span className="font-normal text-muted-foreground">/{f.n}</span>
+                          </td>
+                          <td className="num px-2.5 py-2 text-right">{f.p}</td>
+                          <td className="num px-2.5 py-2 text-right">
+                            {gap == null ? "—" : `−${gap}`}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+        {past.length > 0 && <PastRosters team={team} past={past} archive={archive} />}
+      </div>
+    </section>
+  );
+}
+
+// This season's pool roster, live: the team page that used to be /teams/N
+function ThisSeason({ team, now }: { team: string; now: Now }) {
+  const { team: t, live } = now;
+  const lt = live.teams.find((x) => x.slot === t.slot);
+  const stats: [string, string | number][] = [
+    ["Rank", ord(lt?.rank ?? t.rank)],
+    ["Points", lt?.total ?? t.pts],
+    ...(lt && live.anyGames ? [["Tonight", lt.tonight] as [string, number]] : []),
+    ["Projected", t.projected],
+    ["Swaps left", now.swapsLeft],
+  ];
+  return (
+    <div className="border-b px-5 py-5">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div>
+          <div className={`${eyebrow} !text-red`}>
+            {now.season} pool{t.name !== team ? ` · as ${t.name}` : ""}
+          </div>
+          <h3 className="text-2xl font-extrabold uppercase">This season's roster</h3>
+        </div>
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-center">
+          {stats.map(([label, v]) => (
+            <div key={label}>
+              <div className="num text-3xl font-extrabold leading-none">{v}</div>
+              <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
+                {label}
+              </div>
             </div>
           ))}
         </div>
-        <div className="px-5 py-4">
-          <h3 className="mb-2.5 text-2xl font-extrabold uppercase">Finish by season</h3>
-          <div className="overflow-x-auto">
-            <FinishChart rows={l.rows} />
-          </div>
-        </div>
-        <div className="px-5 pb-5">
-          <h3 className="mb-2.5 text-2xl font-extrabold uppercase">Every pool</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="text-xs uppercase tracking-widest text-muted-foreground">
-                <tr className="border-b-2">
-                  <th className="px-2.5 py-2">Season</th>
-                  <th className="px-2.5 py-2">Pool</th>
-                  <th className="px-2.5 py-2 text-right">Finish</th>
-                  <th className="px-2.5 py-2 text-right">Points</th>
-                  <th className="px-2.5 py-2 text-right">Gap to 1st</th>
-                </tr>
-              </thead>
-              <tbody>
-                {l.rows.map((f) => {
-                  const gap = l.gapToFirst(f);
-                  return (
-                    <tr key={poolKey(f)} className={`border-b ${f.r <= 3 ? "font-bold" : ""}`}>
-                      <td className="px-2.5 py-2">{f.s}</td>
-                      <td className="px-2.5 py-2">{KIND_NAME[f.k]}</td>
-                      <td className="num px-2.5 py-2 text-right">
-                        <span
-                          className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold ${f.r <= 3 ? `${MEDAL[f.r]} ${f.r === 1 ? "text-black" : "text-white"}` : "border bg-muted"}`}
-                        >
-                          {place(f)}
-                        </span>{" "}
-                        <span className="font-normal text-muted-foreground">/{f.n}</span>
-                      </td>
-                      <td className="num px-2.5 py-2 text-right">{f.p}</td>
-                      <td className="num px-2.5 py-2 text-right">
-                        {gap == null ? "—" : `−${gap}`}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+      </div>
+      <div className="mt-4 overflow-x-auto rounded-md border">
+        <div className="sm:min-w-[640px]">
+          <TeamRoster team={t} live={live} full />
         </div>
       </div>
-    </section>
+      {t.dropped.length > 0 && (
+        <>
+          <h4 className="mb-2 mt-4 text-lg font-bold uppercase">Swapped out</h4>
+          <ul className="divide-y rounded-md border">
+            {t.dropped.map((p) => (
+              <li
+                key={p.id}
+                className="flex flex-wrap items-baseline justify-between gap-2 px-3 py-2.5 text-muted-foreground"
+              >
+                <span>
+                  <span className="font-semibold line-through">{p.name}</span>{" "}
+                  <span className="text-sm">
+                    dropped {fmtDate(p.droppedOn)} for {p.replacedBy}
+                  </span>
+                </span>
+                <span className="num line-through">
+                  {p.gp} GP · {p.g}G {p.a}A · {p.pts} P
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <p className="mt-3 text-sm text-muted-foreground">
+        Draft-day projection: {t.preseason} points. When the season ends, this roster stays in the
+        locker.
+      </p>
+    </div>
+  );
+}
+
+// The rosters the team drafted in past seasons, newest first, as they stood at season's end
+function PastRosters({
+  team,
+  past,
+  archive,
+}: {
+  team: string;
+  past: ArchivedRoster[];
+  archive: ArchivedRoster[];
+}) {
+  return (
+    <div className="border-t px-5 py-5">
+      <h3 className="text-2xl font-extrabold uppercase">Past rosters</h3>
+      <p className="mb-2 text-muted-foreground">Who they picked, and what each player scored.</p>
+      {past.map((r, i) => {
+        const teams = archive.filter((x) => x.season_id === r.season_id).length;
+        return (
+          <details
+            key={r.season_id}
+            open={i === 0}
+            className="border-t py-2 first-of-type:border-t-0"
+          >
+            <summary className="cursor-pointer py-1.5 text-xl font-bold">
+              {r.season_id}{" "}
+              <span className="text-base font-normal text-muted-foreground">
+                · {ord(r.rank)} of {teams} · <span className="num">{r.points}</span> pts
+                {r.team_name !== team ? ` · as ${r.team_name}` : ""}
+              </span>
+            </summary>
+            <div className="mt-1 overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="text-xs uppercase tracking-widest text-muted-foreground">
+                  <tr className="border-b-2">
+                    <th className="px-1.5 py-2 sm:px-2.5">Player</th>
+                    <th className="px-1.5 py-2 sm:px-2.5 text-right">GP</th>
+                    <th className="px-1.5 py-2 sm:px-2.5 text-right">G</th>
+                    <th className="px-1.5 py-2 sm:px-2.5 text-right">A</th>
+                    <th className="px-1.5 py-2 sm:px-2.5 text-right">P</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {r.players.map((p) => (
+                    <tr key={p.id} className="border-b">
+                      <td className="px-1.5 py-2 sm:px-2.5">
+                        <div className="font-semibold">{p.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {[p.team, p.pos].filter(Boolean).join(" · ")}
+                          {p.team || p.pos ? " · " : ""}
+                          {p.round != null
+                            ? `Rd\u00a0${p.round}`
+                            : `Swap${p.added ? ` ${fmtDate(p.added)}` : ""}`}
+                        </div>
+                      </td>
+                      <td className="num px-1.5 py-2 sm:px-2.5 text-right">{p.gp}</td>
+                      <td className="num px-1.5 py-2 sm:px-2.5 text-right">{p.g}</td>
+                      <td className="num px-1.5 py-2 sm:px-2.5 text-right">{p.a}</td>
+                      <td className="num px-1.5 py-2 sm:px-2.5 text-right text-lg font-bold">
+                        {p.pts}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {r.dropped.length > 0 && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Swapped out:{" "}
+                {r.dropped
+                  .map((d) => `${d.name} (${d.pts} pts, dropped ${fmtDate(d.dropped)})`)
+                  .join("; ")}
+              </p>
+            )}
+          </details>
+        );
+      })}
+    </div>
   );
 }
 

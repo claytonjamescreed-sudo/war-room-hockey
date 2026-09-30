@@ -100,3 +100,21 @@ async function buildLive(): Promise<LiveData> {
   }
   return computeLive({ date, feeds, draft: league.draft, setup: league.setup, logs: league.logs });
 }
+
+// Past seasons' final pool rosters for the team lockers (the current season comes live from
+// getSeason instead). Rows the daily sync saved in roster_archive; public data only.
+export const getRosterArchive = createServerFn({ method: "GET" }).handler(async () => {
+  const { publicClient } = await import("./league.server");
+  const sb = publicClient();
+  const [current, rows] = await Promise.all([
+    sb.from("seasons").select("id").eq("is_current", true).maybeSingle(),
+    sb
+      .from("roster_archive")
+      .select("season_id,slot,team_name,rank,points,players,dropped")
+      .order("season_id", { ascending: false })
+      .order("rank"),
+  ]);
+  if (rows.error) throw new Error(rows.error.message);
+  const past = (rows.data ?? []).filter((r) => r.season_id !== current.data?.id);
+  return JSON.stringify(past);
+});

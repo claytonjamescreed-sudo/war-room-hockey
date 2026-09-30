@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { lockerSearch } from "@/lib/history";
 import { addDays } from "@/lib/season";
 import { fmtDate, seasonQuery } from "@/lib/season-query";
 
@@ -69,15 +70,15 @@ function Race() {
       <p className="mb-5 text-muted-foreground">
         Every team's points by date, in standings order. Each chart shows one team in red against
         the rest of the pool in gray, all on the same scale. Through {tick(lastDate)}; tap a team
-        name for its players.
+        name for its locker.
       </p>
       <ol className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
         {teams.map((t) => (
           <li key={t.slot} className="min-w-0 rounded-md border bg-card px-2 pb-1 pt-2">
             <div className="flex items-baseline justify-between gap-2 px-1">
               <Link
-                to="/teams/$slot"
-                params={{ slot: String(t.slot) }}
+                to="/history"
+                search={lockerSearch(t.name)}
                 className="min-w-0 truncate text-sm font-semibold hover:underline sm:text-base"
               >
                 <span className="num text-muted-foreground">{t.rank}</span> {t.name}

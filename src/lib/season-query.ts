@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getLive, getSeason } from "./season.functions";
+import type { ArchivedRoster } from "./archive";
+import { getLive, getRosterArchive, getSeason } from "./season.functions";
 
 export const seasonQuery = queryOptions({
   queryKey: ["season"],
@@ -23,4 +24,11 @@ export const liveQuery = queryOptions({
   staleTime: 20_000,
   refetchInterval: (q) => (q.state.data?.anyLive ? 60_000 : 10 * 60_000),
   refetchIntervalInBackground: false,
+});
+
+// Past seasons' rosters change once a season, when the next one starts
+export const archiveQuery = queryOptions({
+  queryKey: ["roster-archive"],
+  queryFn: async () => JSON.parse(await getRosterArchive()) as ArchivedRoster[],
+  staleTime: 60 * 60_000,
 });

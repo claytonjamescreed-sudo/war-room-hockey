@@ -13,6 +13,21 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.3.1",
+    date: "2026-10-01",
+    title: "A logo of our own",
+    changes: [
+      {
+        kind: "improved",
+        text: "The pool has a logo: a skate in full stride with speed stripes, in black, gold and red. It's in the header, the browser tab and the home-screen icon. If you saved the site to your home screen, remove it and add it again to get the new icon.",
+      },
+      {
+        kind: "fixed",
+        text: "On wide screens the header no longer breaks the site's name onto two lines: the menu sits on its own row.",
+      },
+    ],
+  },
+  {
     version: "1.3.0",
     date: "2026-10-01",
     title: "Injuries and next games",

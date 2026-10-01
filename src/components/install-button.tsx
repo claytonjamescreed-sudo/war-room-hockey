@@ -143,7 +143,7 @@ export function InstallButton({ variant = "pill" }: { variant?: "pill" | "row" }
           <Smartphone className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
           {/* On most phones the icon alone, so the header stays on one line beside the site's
               name; the phone menu has it spelled out */}
-          <span className="hidden min-[430px]:inline">Get the app</span>
+          <span className="hidden min-[480px]:inline">Get the app</span>
         </button>
       )}
       <Dialog open={open} onOpenChange={setOpen}>

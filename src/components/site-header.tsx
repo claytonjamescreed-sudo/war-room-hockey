@@ -3,6 +3,7 @@ import { Menu, Moon, Sun, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { builtAt, CURRENT, fmtBuilt } from "@/lib/release";
 import { InstallButton } from "./install-button";
+import { Logo } from "./logo";
 
 type Section = "standings" | "race" | "leaders" | "rules" | "history" | "lockers";
 
@@ -101,19 +102,21 @@ export function SiteHeader() {
   return (
     <>
       <header className="relative z-40 bg-band text-band-foreground">
-        {/* Phones: the logo, Get the app and the menu button. Tablets: the menu as a second row.
-            Wide screens: one line. */}
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 px-4 py-2 md:gap-x-4 md:pb-0 xl:flex-nowrap xl:gap-x-6 xl:py-3">
+        {/* Phones: the logo, Get the app and the menu button. Tablets and up: the logo and the
+            buttons, then the menu as a second row (one line can't hold the name and six links). */}
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 px-4 py-2 md:gap-x-4 md:pb-0 xl:pt-3">
           <Link
             to="/"
             activeOptions={{ exact: true }}
-            className="py-1 font-display text-2xl font-extrabold uppercase leading-none tracking-wide min-[360px]:text-[28px] sm:text-3xl xl:py-0 xl:text-4xl"
+            className="flex items-center gap-2 py-1 font-display text-2xl font-extrabold uppercase leading-none tracking-wide min-[400px]:text-[28px] sm:text-3xl xl:text-4xl"
           >
+            {/* The narrowest phones keep the name and drop the mark, so the bar stays on one row */}
+            <Logo className="hidden h-9 w-9 shrink-0 min-[360px]:block sm:h-10 sm:w-10 xl:h-12 xl:w-12" />
             WG Hockey Pool
           </Link>
           <nav
             aria-label="Main"
-            className="order-last hidden w-full gap-1 pb-1 md:flex xl:order-none xl:w-auto xl:flex-1 xl:pb-0"
+            className="order-last -ml-3 hidden w-[calc(100%+0.75rem)] gap-1 pb-1 md:flex"
           >
             <NavLinks section={section} linkClass={(on) => `${item} ${on ? active : ""}`} />
           </nav>

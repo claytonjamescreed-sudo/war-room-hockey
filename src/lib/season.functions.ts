@@ -89,15 +89,20 @@ export const getLive = createServerFn({ method: "GET" }).handler(async (): Promi
 async function buildLive(): Promise<LiveData> {
   const { leagueWithLogs } = await import("./league.server");
   const { fetchScores } = await import("./nhl.server");
-  const { computeLive } = await import("./live");
-  const [now, league] = await Promise.all([fetchScores(), leagueWithLogs()]);
-  const date: string | null = now?.currentDate ?? null;
-  const feeds = date ? [{ date, games: now.games ?? [] }] : [];
-  // The day before, in case last night's games aren't in the morning sync yet
-  if (now?.prevDate) {
-    const prev = await fetchScores(now.prevDate).catch(() => null);
-    if (prev) feeds.push({ date: now.prevDate, games: prev.games ?? [] });
-  }
+  const { computeLive, hockeyDay } = await import("./live");
+  const { addDays } = await import("./season");
+  // Our own hockey day, not NHL.com's "now": that stays on last night's games until about noon
+  // Eastern, so the morning would still show them as tonight
+  const date = hockeyDay(new Date());
+  const prevDate = addDays(date, -1);
+  const [now, prev, league] = await Promise.all([
+    fetchScores(date),
+    // The day before, in case last night's games aren't in the morning sync yet
+    fetchScores(prevDate).catch(() => null),
+    leagueWithLogs(),
+  ]);
+  const feeds = [{ date, games: now?.games ?? [] }];
+  if (prev) feeds.push({ date: prevDate, games: prev.games ?? [] });
   return computeLive({ date, feeds, draft: league.draft, setup: league.setup, logs: league.logs });
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeLive, gameLabel, type FeedGame } from "./live";
+import { computeLive, gameLabel, hockeyDay, type FeedGame } from "./live";
 import type { Draft, GameLine, Setup } from "./season";
 
 const draft: Draft = {
@@ -208,6 +208,20 @@ describe("computeLive", () => {
     expect(live.ticker[0]!.scorer).toMatchObject({ name: "Ed Eagle", owner: "Aces" });
     // Aardvark 1G 1A, and Eagle a goal plus an assist
     expect(live.teams.find((t) => t.name === "Aces")!.tonight).toBe(4);
+  });
+
+  it("turns the hockey day over at 3 AM Pacific, not when NHL.com does", () => {
+    // 7:37 AM Pacific on Oct 1 (NHL.com's "now" was still on Sep 30)
+    expect(hockeyDay(new Date("2026-10-01T14:37:00Z"))).toBe("2026-10-01");
+    // A late game: 11:30 PM Pacific is still that day, and so is 2:59 AM
+    expect(hockeyDay(new Date("2026-10-02T06:30:00Z"))).toBe("2026-10-01");
+    expect(hockeyDay(new Date("2026-10-02T09:59:00Z"))).toBe("2026-10-01");
+    expect(hockeyDay(new Date("2026-10-02T10:00:00Z"))).toBe("2026-10-02");
+    // Standard time (UTC-8) in January: 3 AM Pacific is 11:00 UTC
+    expect(hockeyDay(new Date("2027-01-15T10:59:00Z"))).toBe("2027-01-14");
+    expect(hockeyDay(new Date("2027-01-15T11:00:00Z"))).toBe("2027-01-15");
+    // An evening game in the east is the same hockey day out west
+    expect(hockeyDay(new Date("2026-10-01T23:00:00Z"))).toBe("2026-10-01");
   });
 
   it("labels games by state", () => {

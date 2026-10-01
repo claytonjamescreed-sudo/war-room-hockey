@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.1.2",
+    date: "2026-10-01",
+    title: "Tonight means tonight",
+    changes: [
+      {
+        kind: "fixed",
+        text: "In the morning, Tonight showed last night's finished games and goals until about 9 AM Pacific. It now switches to the day's games at 3 AM Pacific; last night stays in the recap.",
+      },
+    ],
+  },
+  {
     version: "1.1.1",
     date: "2026-09-30",
     title: "Menu, labelled",

@@ -101,7 +101,19 @@ const periodName = (pd: FeedGame["periodDescriptor"], period?: number) => {
   return ordinal(pd?.number ?? period ?? 1);
 };
 
-// Start times in Pacific time, the pool's home time zone
+// The hockey day, in Pacific time (the pool's home time zone). It turns over at 3 AM, when every
+// game is long over, rather than around noon Eastern when NHL.com's "now" feed moves on to the
+// next day. So from first thing in the morning, Tonight is the games coming up and last night is
+// in the recap.
+const PT_DAY = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Los_Angeles",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+export const hockeyDay = (now: Date) => PT_DAY.format(new Date(now.getTime() - 3 * 3_600_000));
+
+// Start times in Pacific time too
 const PT = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
   minute: "2-digit",

@@ -9,16 +9,11 @@
 import { useRouterState } from "@tanstack/react-router";
 import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { freshStart, freshStartOnce } from "@/lib/fresh";
 import { CURRENT } from "@/lib/release";
 
 const EVERY = 2 * 60_000;
 const MIN_GAP = 10_000;
-const PIN = "__dpl";
-
-function update() {
-  document.cookie = `${PIN}=; Max-Age=0; path=/; secure; samesite=lax`;
-  window.location.reload();
-}
 
 export function UpdateNotice() {
   const [ready, setReady] = useState(false);
@@ -58,6 +53,16 @@ export function UpdateNotice() {
     };
   }, [ready, check]);
 
+  // A piece of the site that wouldn't load (this page's version is gone): start again on the
+  // newest version rather than leave an error on the screen
+  useEffect(() => {
+    const onPreloadError = (e: Event) => {
+      if (freshStartOnce()) e.preventDefault();
+    };
+    window.addEventListener("vite:preloadError", onPreloadError);
+    return () => window.removeEventListener("vite:preloadError", onPreloadError);
+  }, []);
+
   // On opening, and on every move to another page
   useEffect(() => {
     if (!ready) void check();
@@ -66,7 +71,7 @@ export function UpdateNotice() {
   if (!ready) return null;
   return (
     <button
-      onClick={update}
+      onClick={freshStart}
       className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 flex items-center gap-3 rounded-full bg-red py-3 pl-4 pr-5 text-left text-white shadow-lg ring-2 ring-gold hover:brightness-110"
     >
       <RefreshCw className="h-6 w-6 shrink-0" aria-hidden />

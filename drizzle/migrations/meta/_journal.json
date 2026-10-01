@@ -43,6 +43,13 @@
       "when": 1790884753455,
       "tag": "0005_sync_new_address",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790887748351,
+      "tag": "0006_sync_own_domain",
+      "breakpoints": true
     }
   ]
 }

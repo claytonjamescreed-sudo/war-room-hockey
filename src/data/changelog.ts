@@ -13,6 +13,21 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.4.1",
+    date: "2026-10-01",
+    title: "wghockeypool.com",
+    changes: [
+      {
+        kind: "improved",
+        text: "The pool has its own address: wghockeypool.com. The old address forwards there, and the morning update goes straight to the new one.",
+      },
+      {
+        kind: "fixed",
+        text: 'A page left open while the site was updated could show "This page didn\'t load" when you tapped to another page. It now reloads itself onto the newest version, and Try again does the same.',
+      },
+    ],
+  },
+  {
     version: "1.4.0",
     date: "2026-10-01",
     title: "Injuries count in the projections",

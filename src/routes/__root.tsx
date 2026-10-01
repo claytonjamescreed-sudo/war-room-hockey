@@ -14,6 +14,7 @@ import { useEffect, type ReactNode } from "react";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { UpdateNotice } from "@/components/update-notice";
 import appCss from "../styles.css?url";
+import { freshStart, freshStartOnce, isStaleChunk, newerBuildIsOut } from "../lib/fresh";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -38,11 +39,13 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: ErrorComponentProps) {
+function ErrorComponent({ error }: ErrorComponentProps) {
   console.error(error);
-  const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    // Most often this page is an older version that has lost its files: go to the newest one
+    if (isStaleChunk(error)) freshStartOnce();
+    else void newerBuildIsOut().then((stale) => stale && freshStartOnce());
   }, [error]);
 
   return (
@@ -56,10 +59,8 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
+            // A clean load of the newest version, not another go at the request that failed
+            onClick={freshStart}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Try again

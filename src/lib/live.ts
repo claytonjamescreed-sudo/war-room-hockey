@@ -4,6 +4,7 @@
 // earlier game day the morning sync hasn't picked up yet (matched by NHL game id, so nothing
 // counts twice), plus tonight's points from the feed. Shootout goals don't count, as in NHL stats.
 
+import { isOut } from "./injuries";
 import type { Draft, GameLine, PlayerLine, SeasonTeam, Setup } from "./season";
 
 export type FeedGoal = {
@@ -114,6 +115,8 @@ const PT_DAY = new Intl.DateTimeFormat("en-CA", {
 export const hockeyDay = (now: Date) => PT_DAY.format(new Date(now.getTime() - 3 * 3_600_000));
 
 // Start times in Pacific time too
+export const startTimePT = (startTimeUTC: string) => `${PT.format(new Date(startTimeUTC))} PT`;
+
 const PT = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
   minute: "2-digit",
@@ -130,7 +133,7 @@ export function gameLabel(g: FeedGame): string {
     const p = periodName(g.periodDescriptor, g.period);
     return p === "SO" ? "Shootout" : `${p} ${g.clock?.timeRemaining ?? ""}`.trim();
   }
-  return g.startTimeUTC ? `${PT.format(new Date(g.startTimeUTC))} PT` : "Tonight";
+  return g.startTimeUTC ? startTimePT(g.startTimeUTC) : "Tonight";
 }
 
 const counts = (goal: FeedGoal) => goal.periodDescriptor?.periodType !== "SO";
@@ -404,4 +407,20 @@ export function rosterRows(team: SeasonTeam, live: LiveData) {
       };
     })
     .sort((x, y) => (order.get(x.p.id) ?? 99) - (order.get(y.p.id) ?? 99));
+}
+
+// Tonight for one team, by player: still to play, playing now and finished. Anyone on the injury
+// report as out is counted as out instead, whether or not his NHL team plays tonight (so the
+// number matches the badges on its roster), unless he has a point tonight after all.
+export function tonightCounts(team: SeasonTeam, live: LiveData) {
+  const c = { toPlay: 0, playing: 0, done: 0, out: 0 };
+  for (const p of team.roster) {
+    const lp = live.players[p.id];
+    if (isOut(p.injury) && !(lp && lp.g + lp.a > 0)) c.out++;
+    else if (!lp || lp.status === "none") continue;
+    else if (lp.status === "upcoming") c.toPlay++;
+    else if (lp.status === "live") c.playing++;
+    else c.done++;
+  }
+  return c;
 }

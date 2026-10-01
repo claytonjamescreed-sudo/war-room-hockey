@@ -1,22 +1,80 @@
 // A pool team's players with live season points: synced games plus tonight's goals and assists
 // as they happen, so each player's P adds up to the team's live total in the standings
-import { rosterRows, type LiveData } from "@/lib/live";
+import { isOut, type Injury } from "@/lib/injuries";
+import { rosterRows, startTimePT, type LiveData } from "@/lib/live";
 import { perGame } from "@/lib/man-games";
 import type { PlayerLine, SeasonTeam } from "@/lib/season";
 import { fmtDate } from "@/lib/season-query";
 
-// Tonight for one player: his start time, live points, final line, or that he plays next
+// On the injury report: a red badge for out of the lineup (injured reserve, out, suspended), an
+// outlined one for day-to-day. Hover for the details.
+export function InjuryBadge({ injury }: { injury: Injury }) {
+  return (
+    <span
+      title={injuryText(injury)}
+      className={`whitespace-nowrap rounded px-1.5 py-0.5 align-middle text-xs font-bold ${
+        isOut(injury) ? "bg-red text-white" : "border border-red text-red"
+      }`}
+    >
+      {injury.label}
+    </span>
+  );
+}
+
+// "Injured Reserve · Upper Body · expected back Oct 5" (the date is ESPN's estimate)
+const injuryText = (i: Injury) =>
+  [i.status, i.detail, i.returnDate ? `expected back ${fmtDate(i.returnDate)}` : null]
+    .filter(Boolean)
+    .join(" · ");
+
+// A player's name with his NHL team, position and draft round, and his injury if he has one
+export function PlayerName({ p, round }: { p: PlayerLine; round: number | null }) {
+  return (
+    <>
+      <div className="font-semibold">
+        {p.name}
+        {p.injury && (
+          <>
+            {" "}
+            <InjuryBadge injury={p.injury} />
+          </>
+        )}
+      </div>
+      <div className="text-sm text-muted-foreground">
+        {p.team} · {p.pos} · {round != null ? `Rd\u00a0${round}` : "Swap"}
+      </div>
+      {p.injury && <div className="text-sm text-red">{injuryText(p.injury)}</div>}
+    </>
+  );
+}
+
+const versus = (n: NonNullable<PlayerLine["nextGame"]>) => `${n.home ? "vs" : "@"} ${n.opp}`;
+// "Fri @ CAR", or "Tonight vs CAR"
+const nextGameShort = (n: NonNullable<PlayerLine["nextGame"]>, today: string | null) =>
+  `${n.date === today ? "Tonight" : fmtDate(n.date, { weekday: "short" })} ${versus(n)}`;
+// "Oct 2 @ CAR, 4:00 PM PT"
+const nextGameLong = (n: NonNullable<PlayerLine["nextGame"]>, today: string | null) =>
+  `${n.date === today ? "Tonight" : fmtDate(n.date)} ${versus(n)}, ${startTimePT(n.start)}`;
+
+// Tonight for one player: his start time, live points or final line; his injury badge if he's
+// out; otherwise his next game
 export function PlayerTonight({ p, live }: { p: PlayerLine; live: LiveData }) {
   const lp = live.players[p.id];
-  if (!live.anyGames || !lp || lp.status === "none")
-    return p.playsNext ? (
-      <span className="whitespace-nowrap rounded bg-gold/30 px-2 py-0.5 text-sm font-semibold">
-        Plays next
+  const line = lp && lp.g + lp.a ? `${lp.g}G ${lp.a}A` : "";
+  // Out on the injury report: his team may be playing tonight, he isn't
+  if (p.injury && isOut(p.injury) && !line) return <InjuryBadge injury={p.injury} />;
+  if (!live.anyGames || !lp || lp.status === "none") {
+    if (!p.nextGame) return <span className="text-muted-foreground">–</span>;
+    return (
+      <span
+        className={`whitespace-nowrap text-sm ${
+          p.playsNext ? "rounded bg-gold/30 px-2 py-0.5 font-semibold" : "text-muted-foreground"
+        }`}
+      >
+        {nextGameShort(p.nextGame, live.date)}
       </span>
-    ) : (
-      <span className="text-muted-foreground">–</span>
     );
-  const line = lp.g + lp.a ? `${lp.g}G ${lp.a}A` : "";
+  }
   if (lp.status === "live")
     return (
       <span className="whitespace-nowrap rounded bg-red px-2 py-0.5 text-sm font-bold text-white">
@@ -45,7 +103,7 @@ export function TeamRoster({
 }: {
   team: SeasonTeam;
   live: LiveData;
-  // The team locker adds each player's last game on wider screens; the standings keep it short
+  // The team locker adds each player's next and last game on wider screens; the standings keep it short
   full?: boolean;
 }) {
   const rows = rosterRows(team, live);
@@ -97,6 +155,7 @@ export function TeamRoster({
               Proj.
             </th>
             <th className="px-2 py-2 sm:px-3">Tonight</th>
+            {full && <th className="hidden px-2 py-2 sm:px-3 lg:table-cell">Next game</th>}
             {full && <th className="hidden px-2 py-2 sm:px-3 lg:table-cell">Last game</th>}
           </tr>
         </thead>
@@ -106,10 +165,7 @@ export function TeamRoster({
             return (
               <tr key={p.id} className="border-t">
                 <td className="px-2 py-2 sm:px-3">
-                  <div className="font-semibold">{p.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {p.team} · {p.pos} · {round != null ? `Rd\u00a0${round}` : "Swap"}
-                  </div>
+                  <PlayerName p={p} round={round} />
                   <div className="num whitespace-nowrap text-sm text-muted-foreground md:hidden">
                     <div>
                       {l.gp} GP · {perGame(l.pts, l.gp)} PPG
@@ -148,6 +204,11 @@ export function TeamRoster({
                 <td className="px-2 py-2 sm:px-3">
                   <PlayerTonight p={p} live={live} />
                 </td>
+                {full && (
+                  <td className="hidden whitespace-nowrap px-2 py-2 text-sm sm:px-3 lg:table-cell">
+                    {p.nextGame ? nextGameLong(p.nextGame, live.date) : "—"}
+                  </td>
+                )}
                 {full && (
                   <td className="hidden px-2 py-2 sm:px-3 text-sm lg:table-cell">
                     {p.lastGame

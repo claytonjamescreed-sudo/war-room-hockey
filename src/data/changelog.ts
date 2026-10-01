@@ -13,6 +13,29 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.3.0",
+    date: "2026-10-01",
+    title: "Injuries and next games",
+    changes: [
+      {
+        kind: "new",
+        text: "Injuries: a player on the injury report gets a badge by his name (IR, OUT, DTD for day-to-day, or SUSP), with the injury and when he's expected back. From ESPN's injury report.",
+      },
+      {
+        kind: "new",
+        text: "Next game for every player: shown when he isn't playing tonight, and as a column in the team lockers.",
+      },
+      {
+        kind: "improved",
+        text: 'The Tonight count leaves out players who are out, and says how many: "1 playing · 3 out".',
+      },
+      {
+        kind: "improved",
+        text: "A new home-screen icon for WG Hockey Pool.",
+      },
+    ],
+  },
+  {
     version: "1.2.1",
     date: "2026-10-01",
     title: "A new address",

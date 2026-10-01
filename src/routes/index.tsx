@@ -5,9 +5,9 @@ import { Fragment, useState } from "react";
 import { LiveTonight } from "@/components/live-tonight";
 import { NightBrief } from "@/components/night-brief";
 import { TeamLogo } from "@/components/team-logo";
-import { PlayerTonight, TeamRoster } from "@/components/team-roster";
+import { PlayerName, PlayerTonight, TeamRoster } from "@/components/team-roster";
 import { lockerSearch } from "@/lib/history";
-import { livePlayer, rosterRows, type LiveData, type LiveTeam } from "@/lib/live";
+import { livePlayer, rosterRows, tonightCounts, type LiveData } from "@/lib/live";
 import { perGame } from "@/lib/man-games";
 import { fmtDate, liveQuery, seasonQuery } from "@/lib/season-query";
 
@@ -64,32 +64,46 @@ function Move({ rank, prev, title }: { rank: number; prev: number | null; title:
 
 // Tonight for one team: how many of its players are in action, then its points as they come.
 // Before a game starts "5 playing"; during, "+3" over "2 live · 3 to play"; after, "5 played".
-function TonightCell({ lt }: { lt: LiveTeam | undefined }) {
-  if (!lt || lt.toPlay + lt.playing + lt.done === 0)
-    return <span className="num text-xl text-muted-foreground">–</span>;
-  if (lt.playing + lt.done === 0)
+// Players on the injury report as out aren't counted as playing, and every one of the team's is
+// counted as out: "1 playing" over "3 out".
+type TonightCounts = ReturnType<typeof tonightCounts>;
+function TonightCell({ c, points }: { c: TonightCounts; points: number }) {
+  const out = c.out ? `${c.out} out` : "";
+  if (c.toPlay + c.playing + c.done === 0)
+    return out ? (
+      <span className="whitespace-nowrap text-sm text-muted-foreground">{out}</span>
+    ) : (
+      <span className="num text-xl text-muted-foreground">–</span>
+    );
+  if (c.playing + c.done === 0)
     return (
-      <span className="whitespace-nowrap">
-        <span className="num text-xl font-bold">{lt.toPlay}</span>{" "}
-        <span className="text-sm text-muted-foreground">playing</span>
-      </span>
+      <>
+        <span className="whitespace-nowrap">
+          <span className="num text-xl font-bold">{c.toPlay}</span>{" "}
+          <span className="text-sm text-muted-foreground">playing</span>
+        </span>
+        {out && <div className="whitespace-nowrap text-xs text-red">{out}</div>}
+      </>
     );
   const status =
-    [lt.playing ? `${lt.playing} live` : "", lt.toPlay ? `${lt.toPlay} to play` : ""]
+    [c.playing ? `${c.playing} live` : "", c.toPlay ? `${c.toPlay} to play` : ""]
       .filter(Boolean)
-      .join(" · ") || `${lt.done} played`;
+      .join(" · ") || `${c.done} played`;
   return (
     <>
       <div className="num text-xl">
-        {lt.tonight ? (
+        {points ? (
           <span className="rounded bg-gold px-2 py-0.5 font-bold text-accent-foreground">
-            +{lt.tonight}
+            +{points}
           </span>
         ) : (
           <span className="text-muted-foreground">0</span>
         )}
       </div>
-      <div className="mt-0.5 whitespace-nowrap text-xs text-muted-foreground">{status}</div>
+      <div className="mt-0.5 whitespace-nowrap text-xs text-muted-foreground">
+        {status}
+        {out && <span className="text-red"> · {out}</span>}
+      </div>
     </>
   );
 }
@@ -111,10 +125,7 @@ function PlayerRow({
       <td />
       {/* Lined up under the team's name, past its badge */}
       <td className="py-2 pl-[3.25rem] pr-3">
-        <div className="font-semibold">{p.name}</div>
-        <div className="text-sm text-muted-foreground">
-          {p.team} · {p.pos} · {round != null ? `Rd\u00a0${round}` : "Swap"}
-        </div>
+        <PlayerName p={p} round={round} />
       </td>
       <td className="px-3 py-2 text-right">
         <div className="num text-xl font-bold">{l.pts}</div>
@@ -164,6 +175,8 @@ function Standings() {
         // Games its current players have played, and those of tonight's that have started (so
         // points per game keeps up with the live points)
         rosterGP: t.roster.reduce((s, p) => s + p.gp, 0),
+        // Who's in action tonight, without anyone on the injury report as out
+        c: tonightCounts(t, live),
         startedTonight: t.roster.reduce((s, p) => s + livePlayer(p, live).gp - p.gp, 0),
       };
     })
@@ -239,7 +252,7 @@ function Standings() {
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ t, lt, pts, rank, prev, rosterGP, startedTonight }) => (
+            {rows.map(({ t, lt, pts, rank, prev, rosterGP, startedTonight, c }) => (
               <Fragment key={t.slot}>
                 <tr className={`border-t ${open.has(t.slot) ? "bg-muted/50" : ""}`}>
                   <td className="px-3 py-3">
@@ -263,13 +276,14 @@ function Standings() {
                       />
                     </button>
                     {/* Narrower screens, where the Tonight column can be scrolled out of view */}
-                    {live.anyGames && lt && (lt.toPlay > 0 || lt.playing > 0) && (
+                    {live.anyGames && (c.toPlay > 0 || c.playing > 0 || c.out > 0) && (
                       <div className="text-sm text-muted-foreground lg:hidden">
                         {[
-                          lt.playing ? `${lt.playing} playing now` : "",
-                          lt.toPlay
-                            ? `${lt.toPlay} ${lt.playing ? "more tonight" : "playing tonight"}`
+                          c.playing ? `${c.playing} playing now` : "",
+                          c.toPlay
+                            ? `${c.toPlay} ${c.playing ? "more tonight" : "playing tonight"}`
                             : "",
+                          c.out ? `${c.out} out` : "",
                         ]
                           .filter(Boolean)
                           .join(" · ")}
@@ -279,7 +293,7 @@ function Standings() {
                   <td className="num px-3 py-3 text-right text-3xl font-extrabold">{pts}</td>
                   {live.anyGames && (
                     <td className="px-3 py-3 text-right">
-                      <TonightCell lt={lt} />
+                      <TonightCell c={c} points={lt?.tonight ?? 0} />
                     </td>
                   )}
                   <td className="num px-3 py-3 text-right text-xl">{t.lastNight || "–"}</td>

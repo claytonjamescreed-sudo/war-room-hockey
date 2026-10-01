@@ -92,6 +92,23 @@ describe("computeSeason (port of season.js)", () => {
     expect(swapped.roster[0]).toMatchObject({ id: 9, gp: 2, missed: 1, left: 82 });
   });
 
+  it("finds each player's next game in the week's schedule", () => {
+    const d = computeSeason(draft, setup(), {
+      ...raw(),
+      schedule: [
+        // Last night's games are over
+        { date: "2026-10-01", games: [{ state: "OFF", away: "EDM", home: "TOR", start: "2026-10-01T23:00:00Z" }] },
+        { date: "2026-10-02", games: [{ state: "FUT", away: "TOR", home: "EDM", start: "2026-10-03T01:00:00Z" }] },
+        { date: "2026-10-04", games: [{ state: "FUT", away: "EDM", home: "CGY", start: "2026-10-05T01:00:00Z" }] },
+      ],
+    });
+    const next = Object.fromEntries(d.teams.map((t) => [t.name, t.roster[0]!.nextGame]));
+    expect(next["A"]).toEqual({ date: "2026-10-02", opp: "TOR", home: true, start: "2026-10-03T01:00:00Z" });
+    expect(next["B"]).toEqual({ date: "2026-10-02", opp: "EDM", home: false, start: "2026-10-03T01:00:00Z" });
+    // MTL has nothing this week
+    expect(next["C"]).toBeNull();
+  });
+
   it("projects finish with prior 20 games and 0.45 default rate", () => {
     const d = computeSeason(draft, setup(), raw());
     const a = d.teams.find((t) => t.name === "A")!.roster[0]!;

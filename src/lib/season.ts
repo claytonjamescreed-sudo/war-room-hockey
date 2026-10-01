@@ -1,8 +1,9 @@
 // Faithful TypeScript port of computeSeason() from season.js. Pure, no I/O.
 // Do not change behaviour: tests in season.test.ts pin it.
-// Added on top of the port, changing none of its numbers: each player's games missed and games
-// left, and each team's man games (played and missed from man-games.ts, and games left).
+// Added on top of the port, changing none of its numbers: each player's games missed, games left
+// and next game, and each team's man games (played and missed from man-games.ts, and games left).
 
+import type { Injury } from "./injuries";
 import { manGames, playerManGames } from "./man-games";
 
 export const PRIOR_GAMES = 20;
@@ -85,6 +86,10 @@ export type PlayerLine = {
   // Games his NHL team has played that he didn't dress for, and games it has left
   missed: number;
   left: number;
+  // His NHL team's next game in the week's schedule (tonight's, until it's over)
+  nextGame: { date: string; opp: string; home: boolean; start: string } | null;
+  // Set after computeSeason, from ESPN's injury report (see injuries.ts)
+  injury?: Injury;
 };
 
 export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
@@ -153,6 +158,17 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
     d.games.some((g) => g.state === "FUT" || g.state === "PRE" || g.state === "LIVE"),
   );
   const playingNext = new Set(nextDay ? nextDay.games.flatMap((g) => [g.away, g.home]) : []);
+  // Each NHL team's next game that isn't over yet
+  const nextGame = new Map<string, NonNullable<PlayerLine["nextGame"]>>();
+  for (const d of raw.schedule)
+    for (const g of d.games) {
+      if (g.state !== "FUT" && g.state !== "PRE" && g.state !== "LIVE" && g.state !== "CRIT")
+        continue;
+      if (!nextGame.has(g.away))
+        nextGame.set(g.away, { date: d.date, opp: g.home, home: false, start: g.start });
+      if (!nextGame.has(g.home))
+        nextGame.set(g.home, { date: d.date, opp: g.away, home: true, start: g.start });
+    }
 
   // Games missed, by player and by team (see man-games.ts)
   const knownTeam = new Map([...info].map(([id, p]) => [id, p.team]));
@@ -194,6 +210,7 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
       projected: Math.round(g + a + rate * remaining),
       missed: playerMan(id).missed,
       left: remaining,
+      nextGame: (team != null ? nextGame.get(team) : undefined) ?? null,
     };
   };
 

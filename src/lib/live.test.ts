@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { computeLive, gameLabel, hockeyDay, rosterRows, type FeedGame } from "./live";
+import {
+  computeLive,
+  gameLabel,
+  hockeyDay,
+  rosterRows,
+  tonightCounts,
+  type FeedGame,
+} from "./live";
 import { computeSeason, type Draft, type GameLine, type Setup } from "./season";
 
 const draft: Draft = {
@@ -235,6 +242,49 @@ describe("computeLive", () => {
       // Dingo's hasn't started
       ["Di Dingo", 2, 0, 0, 84],
     ]);
+  });
+
+  it("counts who's in action tonight, without anyone out on the injury report", () => {
+    const live = computeLive({
+      date: "2026-10-03",
+      feeds: [{ date: "2026-10-03", games: tonight }],
+      draft,
+      setup,
+      logs,
+    });
+    const season = computeSeason(draft, setup, {
+      fetchedAt: "",
+      logs,
+      leaders: [],
+      teamGP: {},
+      schedule: [],
+    });
+    const aces = season.teams.find((t) => t.name === "Aces")!;
+    // Aardvark's game is on, Dingo's is still to come
+    expect(tonightCounts(aces, live)).toEqual({ toPlay: 1, playing: 1, done: 0, out: 0 });
+
+    const hurt = { status: "Injured Reserve", detail: null, returnDate: null, note: null };
+    const dingo = aces.roster.find((p) => p.name === "Di Dingo")!;
+    const aardvark = aces.roster.find((p) => p.name === "Al Aardvark")!;
+    // Dingo is on injured reserve: his team plays tonight, he doesn't
+    dingo.injury = { kind: "ir", label: "IR", ...hurt };
+    expect(tonightCounts(aces, live)).toEqual({ toPlay: 0, playing: 1, done: 0, out: 1 });
+    // He's out whether or not his NHL team plays tonight: with only the EDM game on, still 1 out
+    const oneGame = computeLive({
+      date: "2026-10-03",
+      feeds: [{ date: "2026-10-03", games: tonight.slice(0, 1) }],
+      draft,
+      setup,
+      logs,
+    });
+    expect(oneGame.players[dingo.id]!.status).toBe("none");
+    expect(tonightCounts(aces, oneGame)).toEqual({ toPlay: 0, playing: 1, done: 0, out: 1 });
+    // Day-to-day might play, so he still counts
+    dingo.injury = { kind: "dtd", label: "DTD", ...hurt, status: "Day-To-Day" };
+    expect(tonightCounts(aces, live)).toEqual({ toPlay: 1, playing: 1, done: 0, out: 0 });
+    // A report that hasn't caught up: Aardvark is listed out but has points tonight, so he's in
+    aardvark.injury = { kind: "out", label: "OUT", ...hurt, status: "Out" };
+    expect(tonightCounts(aces, live)).toEqual({ toPlay: 1, playing: 1, done: 0, out: 0 });
   });
 
   it("turns the hockey day over at 3 AM Pacific, not when NHL.com does", () => {

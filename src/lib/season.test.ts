@@ -109,13 +109,59 @@ describe("computeSeason (port of season.js)", () => {
     expect(next["C"]).toBeNull();
   });
 
-  it("projects finish with prior 20 games and 0.45 default rate", () => {
+  it("projects finish with prior 20 games and 0.45 default rate, per game played", () => {
     const d = computeSeason(draft, setup(), raw());
     const a = d.teams.find((t) => t.name === "A")!.roster[0]!;
-    // rate = (84/84*20 + 3) / (20 + 2) ; remaining 82
+    // rate = (84/84*20 + 3) / (20 + 2 games played) ; remaining 82
     expect(a.projected).toBe(Math.round(3 + ((20 + 3) / 22) * 82));
     const c = d.teams.find((t) => t.name === "C")!.roster[0]!;
-    expect(c.projected).toBe(Math.round(1 + ((0.45 * 20 + 1) / 22) * 82));
+    // P3 played 1 of MTL's 2 games: the rate is over the game he played, not the one he sat out
+    // (season.js divided by the team's 2, which gave 38)
+    expect(c.projected).toBe(Math.round(1 + ((0.45 * 20 + 1) / 21) * 82));
+    expect(c.projected).toBe(40);
+    expect(c.expectedOut).toBe(0);
+    expect(c.injury).toBeUndefined();
+  });
+
+  it("leaves the games a hurt player is expected to miss out of his projection", () => {
+    const hurt = (returnDate: string | null, status = "Injured Reserve") => ({
+      name: "P1",
+      first: "P1",
+      last: "",
+      team: "EDM",
+      pos: "C",
+      status,
+      detail: "Lower Body",
+      returnDate,
+      note: null,
+    });
+    const week = [
+      { date: "2026-10-01", games: [{ state: "OFF", away: "EDM", home: "TOR", start: "" }] },
+      { date: "2026-10-02", games: [{ state: "FUT", away: "TOR", home: "EDM", start: "" }] },
+      { date: "2026-10-04", games: [{ state: "FUT", away: "EDM", home: "CGY", start: "" }] },
+      { date: "2026-10-06", games: [{ state: "FUT", away: "MTL", home: "EDM", start: "" }] },
+    ];
+    const p1 = (injuries: ReturnType<typeof hurt>[]) =>
+      computeSeason(draft, setup(), { ...raw(), schedule: week, injuries, today: "2026-10-02" })
+        .teams.find((t) => t.name === "A")!.roster[0]!;
+    const rate = (20 + 3) / 22;
+
+    // Healthy: all 82 of EDM's games left
+    expect(p1([])).toMatchObject({ expectedOut: 0, projected: Math.round(3 + rate * 82) });
+    // Back on the 5th: he misses the games on the 2nd and the 4th, not the one on the 6th
+    const backSoon = p1([hurt("2026-10-05")]);
+    expect(backSoon.injury).toMatchObject({ label: "IR", returnDate: "2026-10-05" });
+    expect(backSoon).toMatchObject({ expectedOut: 2, projected: Math.round(3 + rate * 80) });
+    // Back in five weeks: the three games in the week's schedule, then about 3 a week after it
+    // (30 days from the 7th to Nov 6 at 84 games in 195 days is 13)
+    expect(p1([hurt("2026-11-06")])).toMatchObject({
+      expectedOut: 16,
+      projected: Math.round(3 + rate * 66),
+    });
+    // No return date: nothing to go on, so nothing is taken off
+    expect(p1([hurt(null)])).toMatchObject({ expectedOut: 0, projected: Math.round(3 + rate * 82) });
+    // His points and his team's rank don't move, only the projection
+    expect(p1([hurt("2026-11-06")]).pts).toBe(3);
   });
 
   it("last night and last 7 days", () => {

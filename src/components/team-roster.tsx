@@ -8,10 +8,10 @@ import { fmtDate } from "@/lib/season-query";
 
 // On the injury report: a red badge for out of the lineup (injured reserve, out, suspended), an
 // outlined one for day-to-day. Hover for the details.
-export function InjuryBadge({ injury }: { injury: Injury }) {
+export function InjuryBadge({ injury, games }: { injury: Injury; games?: number }) {
   return (
     <span
-      title={injuryText(injury)}
+      title={injuryText(injury, games)}
       className={`whitespace-nowrap rounded px-1.5 py-0.5 align-middle text-xs font-bold ${
         isOut(injury) ? "bg-red text-white" : "border border-red text-red"
       }`}
@@ -21,9 +21,16 @@ export function InjuryBadge({ injury }: { injury: Injury }) {
   );
 }
 
-// "Injured Reserve · Upper Body · expected back Oct 5" (the date is ESPN's estimate)
-const injuryText = (i: Injury) =>
-  [i.status, i.detail, i.returnDate ? `expected back ${fmtDate(i.returnDate)}` : null]
+// "Injured Reserve · Upper Body · expected back Oct 5 (about 2 games)". The date is ESPN's
+// estimate; the games are his team's before then, which his projection leaves out.
+const injuryText = (i: Injury, games = 0) =>
+  [
+    i.status,
+    i.detail,
+    i.returnDate
+      ? `expected back ${fmtDate(i.returnDate)}${games ? ` (about ${games} game${games === 1 ? "" : "s"})` : ""}`
+      : null,
+  ]
     .filter(Boolean)
     .join(" · ");
 
@@ -36,14 +43,14 @@ export function PlayerName({ p, round }: { p: PlayerLine; round: number | null }
         {p.injury && (
           <>
             {" "}
-            <InjuryBadge injury={p.injury} />
+            <InjuryBadge injury={p.injury} games={p.expectedOut} />
           </>
         )}
       </div>
       <div className="text-sm text-muted-foreground">
         {p.team} · {p.pos} · {round != null ? `Rd\u00a0${round}` : "Swap"}
       </div>
-      {p.injury && <div className="text-sm text-red">{injuryText(p.injury)}</div>}
+      {p.injury && <div className="text-sm text-red">{injuryText(p.injury, p.expectedOut)}</div>}
     </>
   );
 }
@@ -62,7 +69,8 @@ export function PlayerTonight({ p, live }: { p: PlayerLine; live: LiveData }) {
   const lp = live.players[p.id];
   const line = lp && lp.g + lp.a ? `${lp.g}G ${lp.a}A` : "";
   // Out on the injury report: his team may be playing tonight, he isn't
-  if (p.injury && isOut(p.injury) && !line) return <InjuryBadge injury={p.injury} />;
+  if (p.injury && isOut(p.injury) && !line)
+    return <InjuryBadge injury={p.injury} games={p.expectedOut} />;
   if (!live.anyGames || !lp || lp.status === "none") {
     if (!p.nextGame) return <span className="text-muted-foreground">–</span>;
     return (

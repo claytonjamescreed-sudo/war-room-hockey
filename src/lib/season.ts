@@ -1,9 +1,13 @@
 // Faithful TypeScript port of computeSeason() from season.js. Pure, no I/O.
 // Do not change behaviour: tests in season.test.ts pin it.
-// Added on top of the port, changing none of its numbers: each player's games missed, games left
-// and next game, and each team's man games (played and missed from man-games.ts, and games left).
+// Added on top of the port, changing none of its points or ranks: each player's games missed,
+// games left and next game, each team's man games (played and missed from man-games.ts, and games
+// left), and who's hurt (injuries.ts).
+// The projection is the one number that differs from season.js: the rate is per game the player
+// has played (season.js divided by his team's games, so a game he sat out pulled his rate down),
+// and the games he's expected to miss while hurt aren't counted among the games to come.
 
-import type { Injury } from "./injuries";
+import { gamesOut, matchInjuries, type Injury, type ReportLine } from "./injuries";
 import { manGames, playerManGames } from "./man-games";
 
 export const PRIOR_GAMES = 20;
@@ -58,6 +62,10 @@ export type Raw = {
   leaders: Leader[];
   teamGP: Record<string, number>;
   schedule: ScheduleDay[];
+  // ESPN's injury report and today's date (the hockey day), for who's hurt and the games he's
+  // expected to miss. Without them nobody is hurt.
+  injuries?: ReportLine[];
+  today?: string;
 };
 
 export const addDays = (iso: string, n: number) => {
@@ -88,8 +96,10 @@ export type PlayerLine = {
   left: number;
   // His NHL team's next game in the week's schedule (tonight's, until it's over)
   nextGame: { date: string; opp: string; home: boolean; start: string } | null;
-  // Set after computeSeason, from ESPN's injury report (see injuries.ts)
+  // On ESPN's injury report (see injuries.ts), and how many of his team's games he's expected to
+  // miss before he's back: they're left out of his projection
   injury?: Injury;
+  expectedOut: number;
 };
 
 export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
@@ -175,6 +185,24 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
   const playerMan = playerManGames(draft, setup, raw.logs, knownTeam);
   const man = manGames(draft, setup, raw.logs, knownTeam);
 
+  // Who's hurt, among the players on a roster now
+  const team0 = (id: number) => {
+    const gl = games(id);
+    return gl.length ? gl[gl.length - 1]!.team : (info.get(id)?.team ?? null);
+  };
+  const injuryOf = matchInjuries(
+    slots.flatMap((s) =>
+      rosterAt(s, null).map((id) => ({
+        id,
+        name: info.get(id)?.name ?? "",
+        team: team0(id),
+        pos: info.get(id)?.pos ?? null,
+      })),
+    ),
+    raw.injuries ?? [],
+  );
+  const today = raw.today ?? lastDate ?? rules.countFrom;
+
   const playerLine = (id: number): PlayerLine => {
     const gl = games(id);
     const p = info.get(id) || ({} as Partial<Info>);
@@ -185,7 +213,11 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
     const teamGP = (team != null ? raw.teamGP[team] : undefined) ?? gl.length;
     const remaining = Math.max(0, rules.seasonGames - teamGP);
     const prior = p.proj != null ? p.proj / rules.seasonGames : DEFAULT_RATE;
-    const rate = (prior * PRIOR_GAMES + g + a) / (PRIOR_GAMES + teamGP);
+    // Points a game he has played (a game he sat out isn't a game he was held off the sheet),
+    // times the games he's expected to play: his team's games left, less those he'll miss hurt
+    const rate = (prior * PRIOR_GAMES + g + a) / (PRIOR_GAMES + gl.length);
+    const injury = injuryOf[id];
+    const expectedOut = Math.min(remaining, gamesOut(injury, team, raw.schedule, today));
     return {
       id,
       name: p.name as string,
@@ -207,7 +239,9 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
         .reduce((s, x) => s + x.g + x.a, 0),
       playsNext: team != null && playingNext.has(team),
       preseason: p.proj ?? null,
-      projected: Math.round(g + a + rate * remaining),
+      projected: Math.round(g + a + rate * (remaining - expectedOut)),
+      expectedOut,
+      ...(injury ? { injury } : {}),
       missed: playerMan(id).missed,
       left: remaining,
       nextGame: (team != null ? nextGame.get(team) : undefined) ?? null,

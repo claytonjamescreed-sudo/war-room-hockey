@@ -19,7 +19,7 @@ async function build() {
   const { fetchLeaders, fetchTeamGP, fetchSchedule } = await import("./nhl.server");
   const { computeSeason } = await import("./season");
   const { fetchInjuryReport } = await import("./injuries.server");
-  const { matchInjuries } = await import("./injuries");
+  const { hockeyDay } = await import("./live");
   const [{ season, draft, setup, logs }, leaders, teamGP, schedule, report] = await Promise.all([
     leagueWithLogs(),
     fetchLeaders(300).catch(() => []),
@@ -33,17 +33,10 @@ async function build() {
     leaders,
     teamGP,
     schedule,
+    // Who's hurt right now, from ESPN's injury report (public news, nothing from the draft model)
+    injuries: report,
+    today: hockeyDay(new Date()),
   });
-  // Who's hurt right now, from ESPN's injury report (public news, nothing from the draft model)
-  const injuries = matchInjuries(
-    data.teams.flatMap((t) => t.roster),
-    report,
-  );
-  for (const t of data.teams)
-    for (const p of t.roster) {
-      const injury = injuries[p.id];
-      if (injury) p.injury = injury;
-    }
   // Full best-available list (not just 15) for the redraft
   const owned = new Set(data.teams.flatMap((t) => t.roster.map((p) => p.id)));
   const availableAll = leaders.filter((l: { id: number }) => !owned.has(l.id)).slice(0, 100);

@@ -13,6 +13,25 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.4.0",
+    date: "2026-10-01",
+    title: "Injuries count in the projections",
+    changes: [
+      {
+        kind: "improved",
+        text: "Projections account for injuries: a player on the injury report isn't credited with the games he's expected to miss before his return date. His injury line says how many.",
+      },
+      {
+        kind: "improved",
+        text: "A player's scoring rate is his points per game played, so a game he sat out no longer drags his projection down.",
+      },
+      {
+        kind: "improved",
+        text: "The standings fit a phone without scrolling sideways: rank, team and points, with the other numbers under each team's name.",
+      },
+    ],
+  },
+  {
     version: "1.3.2",
     date: "2026-10-01",
     title: "Sharper tab icon",

@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { isOut, kindOf, matchInjuries, nhlTeam, plainName, type ReportLine } from "./injuries";
+import {
+  gamesOut,
+  isOut,
+  kindOf,
+  matchInjuries,
+  nhlTeam,
+  plainName,
+  type Injury,
+  type ReportLine,
+} from "./injuries";
 
 const line = (
   name: string,
@@ -138,6 +147,38 @@ describe("injuries", () => {
         [line("Bryan Rust", "NYR", "RW", "Out")],
       )[1],
     ).toMatchObject({ label: "OUT" });
+  });
+
+  it("counts the games a player is expected to miss before he's back", () => {
+    const out = (returnDate: string | null): Injury => ({
+      kind: "ir",
+      label: "IR",
+      status: "Injured Reserve",
+      detail: null,
+      returnDate,
+      note: null,
+    });
+    const g = (state: string, away: string, home: string) => ({ state, away, home });
+    const week = [
+      { date: "2026-10-01", games: [g("OFF", "EDM", "TOR")] },
+      { date: "2026-10-02", games: [g("LIVE", "TOR", "EDM"), g("FUT", "MTL", "BOS")] },
+      { date: "2026-10-04", games: [g("FUT", "EDM", "CGY")] },
+      { date: "2026-10-06", games: [g("FUT", "MTL", "EDM")] },
+    ];
+    // Healthy, or with no return date, or already due back: none
+    expect(gamesOut(undefined, "EDM", week, "2026-10-02")).toBe(0);
+    expect(gamesOut(out(null), "EDM", week, "2026-10-02")).toBe(0);
+    expect(gamesOut(out("2026-10-02"), "EDM", week, "2026-10-02")).toBe(0);
+    // Tonight's game (on now) and the 4th; a game already over isn't one to come
+    expect(gamesOut(out("2026-10-05"), "EDM", week, "2026-10-02")).toBe(2);
+    expect(gamesOut(out("2026-10-05"), "EDM", week, "2026-10-01")).toBe(2);
+    // Only his own team's games
+    expect(gamesOut(out("2026-10-05"), "BOS", week, "2026-10-02")).toBe(1);
+    // Past the schedule: the 3 counted, then 30 days at the league's pace (about 13)
+    expect(gamesOut(out("2026-11-06"), "EDM", week, "2026-10-02")).toBe(16);
+    // No schedule at all: estimated from today
+    expect(gamesOut(out("2026-10-16"), "EDM", [], "2026-10-02")).toBe(6);
+    expect(gamesOut(out("2026-10-05"), null, week, "2026-10-02")).toBe(0);
   });
 
   it("has nobody hurt when the report is empty", () => {

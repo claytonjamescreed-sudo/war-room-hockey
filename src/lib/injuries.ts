@@ -30,6 +30,41 @@ export type ReportLine = {
 };
 
 type Player = { id: number; name: string; team: string | null; pos: string | null };
+type Day = { date: string; games: { state: string; away: string; home: string }[] };
+
+// About 3 games a week: an 84-game season over about 195 days. For return dates past the week's
+// schedule, where the games can't be counted.
+export const GAMES_PER_DAY = 84 / 195;
+
+const daysBetween = (from: string, to: string) =>
+  Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000);
+const dayAfter = (date: string) =>
+  new Date(Date.parse(`${date}T12:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+
+// How many of his NHL team's games a player is expected to miss before ESPN's return date: the
+// ones in the week's schedule counted, the rest estimated at the league's pace. Nothing without
+// a return date, since there's nothing to go on.
+export function gamesOut(
+  injury: Injury | null | undefined,
+  team: string | null,
+  schedule: Day[],
+  today: string,
+): number {
+  const back = injury?.returnDate;
+  if (!back || !team || back <= today) return 0;
+  let counted = 0;
+  for (const d of schedule) {
+    if (d.date < today || d.date >= back) continue;
+    for (const g of d.games)
+      // A game already over is in his team's games played, not its games left
+      if ((g.away === team || g.home === team) && g.state !== "OFF" && g.state !== "FINAL")
+        counted++;
+  }
+  const lastScheduled = schedule.reduce((max, d) => (d.date > max ? d.date : max), "");
+  const from = lastScheduled >= today ? dayAfter(lastScheduled) : today;
+  const beyond = back > from ? daysBetween(from, back) * GAMES_PER_DAY : 0;
+  return Math.round(counted + beyond);
+}
 
 const LABEL: Record<InjuryKind, string> = { ir: "IR", out: "OUT", dtd: "DTD", susp: "SUSP" };
 

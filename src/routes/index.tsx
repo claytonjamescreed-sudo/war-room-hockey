@@ -213,16 +213,20 @@ function Standings() {
       </div>
       <p className="mb-2 text-muted-foreground">Tap a team to see its players.</p>
       <div className="overflow-x-auto rounded-md border bg-card">
-        <table className="w-full min-w-[700px] text-left">
+        <table className="w-full text-left md:min-w-[700px]">
           <thead className="bg-muted text-sm uppercase tracking-wider text-muted-foreground">
             <tr>
-              <th className="px-3 py-3">#</th>
-              <th className="px-3 py-3">Team</th>
-              <th className="px-3 py-3 text-right">Pts</th>
-              {live.anyGames && <th className="px-3 py-3 text-right">Tonight</th>}
-              <th className="px-3 py-3 text-right">Last night</th>
-              <th className="px-3 py-3 text-right">Last 7</th>
-              <th className="px-3 py-3 text-right">Back</th>
+              {/* Phones: rank, team and points, with the other numbers under the team's name, so
+                  nothing is off to the right. Tablets and up: every column. */}
+              <th className="px-2 py-3 md:px-3">#</th>
+              <th className="px-2 py-3 md:px-3">Team</th>
+              <th className="px-2 py-3 text-right md:px-3">Pts</th>
+              {live.anyGames && (
+                <th className="hidden px-3 py-3 text-right md:table-cell">Tonight</th>
+              )}
+              <th className="hidden px-3 py-3 text-right md:table-cell">Last night</th>
+              <th className="hidden px-3 py-3 text-right md:table-cell">Last 7</th>
+              <th className="hidden px-3 py-3 text-right md:table-cell">Back</th>
               {/* Man games: wide screens only; narrower ones have them inside the opened team */}
               <th
                 className="hidden px-3 py-3 text-right lg:table-cell"
@@ -248,20 +252,20 @@ function Standings() {
               >
                 Left
               </th>
-              <th className="px-3 py-3 text-right">Proj.</th>
+              <th className="hidden px-3 py-3 text-right md:table-cell">Proj.</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(({ t, lt, pts, rank, prev, rosterGP, startedTonight, c }) => (
               <Fragment key={t.slot}>
                 <tr className={`border-t ${open.has(t.slot) ? "bg-muted/50" : ""}`}>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="num w-7 text-2xl font-bold">{rank}</span>
+                  <td className="px-2 py-3 align-top md:px-3 md:align-middle">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <span className="num w-6 text-2xl font-bold md:w-7">{rank}</span>
                       <Move rank={rank} prev={prev} title={moveTitle} />
                     </div>
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-2 py-3 md:px-3">
                     <button
                       onClick={() => toggle(t.slot)}
                       aria-expanded={open.has(t.slot)}
@@ -275,7 +279,7 @@ function Standings() {
                         aria-hidden
                       />
                     </button>
-                    {/* Narrower screens, where the Tonight column can be scrolled out of view */}
+                    {/* Narrower screens, where the Tonight column is hidden or its detail is */}
                     {live.anyGames && (c.toPlay > 0 || c.playing > 0 || c.out > 0) && (
                       <div className="text-sm text-muted-foreground lg:hidden">
                         {[
@@ -289,16 +293,46 @@ function Standings() {
                           .join(" · ")}
                       </div>
                     )}
+                    {/* Phones: the columns that don't fit, as a line under the name */}
+                    <div className="mt-0.5 flex flex-wrap gap-x-3 text-sm text-muted-foreground md:hidden">
+                      <span>
+                        Last night <b className="num text-foreground">{t.lastNight || "–"}</b>
+                      </span>
+                      <span>
+                        Last 7 <b className="num text-foreground">{t.last7}</b>
+                      </span>
+                      <span>
+                        Proj. <b className="num text-foreground">{t.projected}</b>
+                      </span>
+                    </div>
                   </td>
-                  <td className="num px-3 py-3 text-right text-3xl font-extrabold">{pts}</td>
+                  <td className="px-2 py-3 text-right align-top md:px-3 md:align-middle">
+                    <div className="num text-3xl font-extrabold">{pts}</div>
+                    {/* Phones: tonight's points and the gap to the leader here, since those
+                        columns are hidden */}
+                    {!!lt?.tonight && (
+                      <span className="num rounded bg-gold px-1.5 py-0.5 text-sm font-bold text-accent-foreground md:hidden">
+                        +{lt.tonight}
+                      </span>
+                    )}
+                    {leader - pts > 0 && (
+                      <div className="whitespace-nowrap text-xs text-muted-foreground md:hidden">
+                        <span className="num">{leader - pts}</span> back
+                      </div>
+                    )}
+                  </td>
                   {live.anyGames && (
-                    <td className="px-3 py-3 text-right">
+                    <td className="hidden px-3 py-3 text-right md:table-cell">
                       <TonightCell c={c} points={lt?.tonight ?? 0} />
                     </td>
                   )}
-                  <td className="num px-3 py-3 text-right text-xl">{t.lastNight || "–"}</td>
-                  <td className="num px-3 py-3 text-right text-xl">{t.last7}</td>
-                  <td className="num px-3 py-3 text-right text-xl text-muted-foreground">
+                  <td className="num hidden px-3 py-3 text-right text-xl md:table-cell">
+                    {t.lastNight || "–"}
+                  </td>
+                  <td className="num hidden px-3 py-3 text-right text-xl md:table-cell">
+                    {t.last7}
+                  </td>
+                  <td className="num hidden px-3 py-3 text-right text-xl text-muted-foreground md:table-cell">
                     {leader - pts || "–"}
                   </td>
                   <td className="num hidden px-3 py-3 text-right text-xl lg:table-cell">
@@ -313,7 +347,7 @@ function Standings() {
                   <td className="num hidden px-3 py-3 text-right text-xl lg:table-cell">
                     {t.manGames.left - startedTonight}
                   </td>
-                  <td className="px-3 py-3 text-right">
+                  <td className="hidden px-3 py-3 text-right md:table-cell">
                     <div className="num text-xl font-bold">{t.projected}</div>
                     <div className="text-xs text-muted-foreground">draft {t.preseason}</div>
                   </td>

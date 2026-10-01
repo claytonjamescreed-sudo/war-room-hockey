@@ -13,6 +13,37 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.2.0",
+    date: "2026-10-01",
+    title: "Man games and points per game",
+    changes: [
+      {
+        kind: "new",
+        text: "Man games for every team and every player: games played, games missed (injuries, scratches, rest) and games left. Team totals are in the standings on wide screens; tap a team open to see them for each of its players.",
+      },
+      {
+        kind: "new",
+        text: "Projected points for every player. On wide screens an opened team's players line up under the same columns as the teams.",
+      },
+      {
+        kind: "new",
+        text: "Points per game for every player, and for every team.",
+      },
+      {
+        kind: "improved",
+        text: "The Tonight column shows how many of each team's players are playing, then who's live and who's still to play.",
+      },
+      {
+        kind: "improved",
+        text: "Pool goals tonight reads cleanly on phones: the time and score, the play, then who it counted for. Only the pool's players are in bold.",
+      },
+      {
+        kind: "fixed",
+        text: "The top bar on phones fits on one row again with the site's new name. Get the app is in the menu too.",
+      },
+    ],
+  },
+  {
     version: "1.1.3",
     date: "2026-10-01",
     title: "WG Hockey Pool",

@@ -4,7 +4,7 @@
 // earlier game day the morning sync hasn't picked up yet (matched by NHL game id, so nothing
 // counts twice), plus tonight's points from the feed. Shootout goals don't count, as in NHL stats.
 
-import type { Draft, GameLine, PlayerLine, Setup } from "./season";
+import type { Draft, GameLine, PlayerLine, SeasonTeam, Setup } from "./season";
 
 export type FeedGoal = {
   period?: number;
@@ -386,4 +386,22 @@ export function livePlayer(p: PlayerLine, live: LiveData) {
   const synced = !!(p.lastGame && live.date && p.lastGame.date >= live.date);
   const playing = lp.status === "live" || lp.status === "done";
   return { gp: p.gp + (playing && !synced ? 1 : 0), g, a, pts: g + a, tonight: lp };
+}
+
+// A team's players in the order it drafted them, each with tonight added to his season
+export function rosterRows(team: SeasonTeam, live: LiveData) {
+  const order = new Map(team.drafted.map((d, i) => [d.id, i]));
+  const round = new Map(team.drafted.map((d) => [d.id, d.round]));
+  return team.roster
+    .map((p) => {
+      const l = livePlayer(p, live);
+      return {
+        p,
+        l,
+        round: round.get(p.id) ?? null,
+        // A game that has started tonight counts as played, so it's no longer one of his left
+        left: p.left - (l.gp - p.gp),
+      };
+    })
+    .sort((x, y) => (order.get(x.p.id) ?? 99) - (order.get(y.p.id) ?? 99));
 }

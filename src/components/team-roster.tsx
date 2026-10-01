@@ -1,10 +1,12 @@
 // A pool team's players with live season points: synced games plus tonight's goals and assists
 // as they happen, so each player's P adds up to the team's live total in the standings
-import { livePlayer, type LiveData } from "@/lib/live";
+import { rosterRows, type LiveData } from "@/lib/live";
+import { perGame } from "@/lib/man-games";
 import type { PlayerLine, SeasonTeam } from "@/lib/season";
 import { fmtDate } from "@/lib/season-query";
 
-function Tonight({ p, live }: { p: PlayerLine; live: LiveData }) {
+// Tonight for one player: his start time, live points, final line, or that he plays next
+export function PlayerTonight({ p, live }: { p: PlayerLine; live: LiveData }) {
   const lp = live.players[p.id];
   if (!live.anyGames || !lp || lp.status === "none")
     return p.playsNext ? (
@@ -43,69 +45,121 @@ export function TeamRoster({
 }: {
   team: SeasonTeam;
   live: LiveData;
-  // The team locker adds games played and last game on wider screens; the standings keep it short
+  // The team locker adds each player's last game on wider screens; the standings keep it short
   full?: boolean;
 }) {
-  // In the order the team drafted them
-  const order = new Map(team.drafted.map((d, i) => [d.id, i]));
-  const round = new Map(team.drafted.map((d) => [d.id, d.round]));
-  const rows = team.roster
-    .map((p) => ({ p, l: livePlayer(p, live) }))
-    .sort((x, y) => (order.get(x.p.id) ?? 99) - (order.get(y.p.id) ?? 99));
+  const rows = rosterRows(team, live);
+  // With tonight's games counted once they start, like the points beside them
+  const startedTonight = rows.reduce((s, r) => s + r.l.gp - r.p.gp, 0);
+  const played = team.manGames.played + startedTonight;
+  const { missed } = team.manGames;
+  const teamLeft = team.manGames.left - startedTonight;
+  const teamPPG = perGame(
+    rows.reduce((s, r) => s + r.l.pts, 0),
+    rows.reduce((s, r) => s + r.l.gp, 0),
+  );
   return (
-    <table className="w-full text-left">
-      <thead className="text-sm uppercase tracking-wider text-muted-foreground">
-        <tr>
-          <th className="px-2 py-2 sm:px-3">Player</th>
-          {full && <th className="hidden px-2 py-2 sm:px-3 text-right sm:table-cell">GP</th>}
-          <th className="px-2 py-2 sm:px-3 text-right">G</th>
-          <th className="px-2 py-2 sm:px-3 text-right">A</th>
-          <th className="px-2 py-2 sm:px-3 text-right">P</th>
-          <th className="px-2 py-2 sm:px-3">Tonight</th>
-          {full && <th className="hidden px-2 py-2 sm:px-3 sm:table-cell">Last game</th>}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map(({ p, l }) => {
-          const tonightPts = l.tonight ? l.tonight.g + l.tonight.a : 0;
-          return (
-            <tr key={p.id} className="border-t">
-              <td className="px-2 py-2 sm:px-3">
-                <div className="font-semibold">{p.name}</div>
-                <div className="text-sm text-muted-foreground">
-                  {p.team} · {p.pos} ·{" "}
-                  {round.get(p.id) != null ? `Rd\u00a0${round.get(p.id)}` : "Swap"}
-                </div>
-              </td>
-              {full && (
-                <td className="num hidden px-2 py-2 sm:px-3 text-right text-lg sm:table-cell">
+    <>
+      {/* Man games: the team's totals (the standings show them as columns on wide screens) */}
+      <p className="border-b px-2 py-2 text-sm text-muted-foreground sm:px-3">
+        <span className="font-semibold uppercase tracking-wider">Man games</span>{" "}
+        <b className="num text-base text-foreground">{played}</b> played ·{" "}
+        <b className="num text-base text-foreground">{missed}</b> missed ·{" "}
+        <b className="num text-base text-foreground">{teamLeft}</b> left ·{" "}
+        <b className="num text-base text-foreground">{teamPPG}</b> PPG
+      </p>
+      <table className="w-full text-left">
+        <thead className="text-sm uppercase tracking-wider text-muted-foreground">
+          <tr>
+            <th className="px-2 py-2 sm:px-3">Player</th>
+            {/* Narrow screens show these under the player's name instead */}
+            <th className="hidden px-2 py-2 text-right md:table-cell md:px-3">GP</th>
+            <th
+              className="hidden px-2 py-2 text-right md:table-cell md:px-3"
+              title="Games his NHL team has played that he didn't dress for"
+            >
+              Missed
+            </th>
+            <th
+              className="hidden px-2 py-2 text-right md:table-cell md:px-3"
+              title="Games his NHL team has left this season"
+            >
+              Left
+            </th>
+            <th className="px-2 py-2 sm:px-3 text-right">G</th>
+            <th className="px-2 py-2 sm:px-3 text-right">A</th>
+            <th className="px-2 py-2 sm:px-3 text-right">P</th>
+            <th className="hidden px-2 py-2 text-right md:table-cell md:px-3">PPG</th>
+            <th
+              className="hidden px-2 py-2 text-right md:table-cell md:px-3"
+              title="Projected points for the season"
+            >
+              Proj.
+            </th>
+            <th className="px-2 py-2 sm:px-3">Tonight</th>
+            {full && <th className="hidden px-2 py-2 sm:px-3 lg:table-cell">Last game</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ p, l, round, left }) => {
+            const tonightPts = l.tonight ? l.tonight.g + l.tonight.a : 0;
+            return (
+              <tr key={p.id} className="border-t">
+                <td className="px-2 py-2 sm:px-3">
+                  <div className="font-semibold">{p.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {p.team} · {p.pos} · {round != null ? `Rd\u00a0${round}` : "Swap"}
+                  </div>
+                  <div className="num whitespace-nowrap text-sm text-muted-foreground md:hidden">
+                    <div>
+                      {l.gp} GP · {perGame(l.pts, l.gp)} PPG
+                    </div>
+                    <div>
+                      {p.missed} missed · {left} left
+                    </div>
+                    <div>Projected {p.projected}</div>
+                  </div>
+                </td>
+                <td className="num hidden px-2 py-2 text-right text-lg md:table-cell md:px-3">
                   {l.gp}
                 </td>
-              )}
-              <td className="num px-2 py-2 sm:px-3 text-right text-lg">{l.g}</td>
-              <td className="num px-2 py-2 sm:px-3 text-right text-lg">{l.a}</td>
-              <td className="num px-2 py-2 sm:px-3 text-right">
-                <span className="text-2xl font-bold">{l.pts}</span>
-                {tonightPts > 0 && (
-                  <span className="ml-1.5 rounded bg-gold px-1.5 py-0.5 align-middle text-sm font-bold text-accent-foreground">
-                    +{tonightPts}
-                  </span>
-                )}
-              </td>
-              <td className="px-2 py-2 sm:px-3">
-                <Tonight p={p} live={live} />
-              </td>
-              {full && (
-                <td className="hidden px-2 py-2 sm:px-3 text-sm sm:table-cell">
-                  {p.lastGame
-                    ? `${fmtDate(p.lastGame.date)} ${p.lastGame.home ? "vs" : "@"} ${p.lastGame.opp}: ${p.lastGame.g}G ${p.lastGame.a}A`
-                    : "—"}
+                <td className="num hidden px-2 py-2 text-right text-lg md:table-cell md:px-3">
+                  {p.missed || <span className="text-muted-foreground">–</span>}
                 </td>
-              )}
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+                <td className="num hidden px-2 py-2 text-right text-lg md:table-cell md:px-3">
+                  {left}
+                </td>
+                <td className="num px-2 py-2 sm:px-3 text-right text-lg">{l.g}</td>
+                <td className="num px-2 py-2 sm:px-3 text-right text-lg">{l.a}</td>
+                <td className="num px-2 py-2 sm:px-3 text-right">
+                  <span className="text-2xl font-bold">{l.pts}</span>
+                  {tonightPts > 0 && (
+                    <span className="ml-1.5 rounded bg-gold px-1.5 py-0.5 align-middle text-sm font-bold text-accent-foreground">
+                      +{tonightPts}
+                    </span>
+                  )}
+                </td>
+                <td className="num hidden px-2 py-2 text-right text-lg md:table-cell md:px-3">
+                  {perGame(l.pts, l.gp)}
+                </td>
+                <td className="num hidden px-2 py-2 text-right text-lg md:table-cell md:px-3">
+                  {p.projected}
+                </td>
+                <td className="px-2 py-2 sm:px-3">
+                  <PlayerTonight p={p} live={live} />
+                </td>
+                {full && (
+                  <td className="hidden px-2 py-2 sm:px-3 text-sm lg:table-cell">
+                    {p.lastGame
+                      ? `${fmtDate(p.lastGame.date)} ${p.lastGame.home ? "vs" : "@"} ${p.lastGame.opp}: ${p.lastGame.g}G ${p.lastGame.a}A`
+                      : "—"}
+                  </td>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </>
   );
 }

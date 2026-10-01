@@ -107,7 +107,7 @@ export function SiteHeader() {
           <Link
             to="/"
             activeOptions={{ exact: true }}
-            className="py-1 font-display text-[28px] font-extrabold uppercase leading-none tracking-wide sm:text-3xl xl:py-0 xl:text-4xl"
+            className="py-1 font-display text-2xl font-extrabold uppercase leading-none tracking-wide min-[360px]:text-[28px] sm:text-3xl xl:py-0 xl:text-4xl"
           >
             WG Hockey Pool
           </Link>
@@ -153,9 +153,12 @@ export function SiteHeader() {
           >
             <div className="flex flex-col gap-1 px-2 py-2">
               <NavLinks section={section} linkClass={row} onPick={close} />
+              <div className="mt-1 border-t border-band-foreground/20 pt-1">
+                <InstallButton variant="row" />
+              </div>
               <button
                 onClick={toggle}
-                className={`${row(false)} mt-1 flex w-full items-center gap-3 border-t border-band-foreground/20 pt-4 text-left`}
+                className={`${row(false)} flex w-full items-center gap-3 text-left`}
               >
                 {dark ? (
                   <Sun className="h-6 w-6" aria-hidden />

@@ -10,22 +10,19 @@ function statusLine(live: LiveData) {
   return next ? `First puck drop ${next.label}` : "";
 }
 
+// A pool team's player in bold with his team; anyone else in the play in plain text
 function Who({ p }: { p: TickerPerson }) {
+  if (!p.owner || p.slot == null) return <>{p.name}</>;
   return (
     <>
-      <b>{p.name}</b>
-      {p.owner && p.slot != null && (
-        <>
-          {" "}
-          <Link
-            to="/history"
-            search={lockerSearch(p.owner)}
-            className="text-muted-foreground hover:underline"
-          >
-            ({p.owner})
-          </Link>
-        </>
-      )}
+      <b>{p.name}</b>{" "}
+      <Link
+        to="/history"
+        search={lockerSearch(p.owner)}
+        className="text-muted-foreground hover:underline"
+      >
+        ({p.owner})
+      </Link>
     </>
   );
 }
@@ -80,12 +77,15 @@ export function LiveTonight({ live }: { live: LiveData }) {
         ) : (
           <ol className="divide-y" aria-live="polite">
             {live.ticker.map((e) => (
-              <li
-                key={e.key}
-                className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2 text-lg"
-              >
-                <span className="num w-24 shrink-0 text-muted-foreground">{e.label}</span>
-                <span className="min-w-0 flex-1">
+              // Phones and tablets: time and score, then the sentence, then the badges, each on its
+              // own line. Wide screens: one row. (Side by side on a narrow screen, the badges
+              // squeezed the sentence down to a word a line.)
+              <li key={e.key} className="py-2.5 lg:flex lg:items-baseline lg:gap-x-3 lg:py-2">
+                <span className="num block text-sm text-muted-foreground lg:w-24 lg:shrink-0 lg:text-lg">
+                  {e.label}
+                  <span className="lg:hidden"> · {e.score}</span>
+                </span>
+                <span className="block min-w-0 lg:flex-1 lg:text-lg">
                   <Who p={e.scorer} /> scored
                   {e.assists.length > 0 && (
                     <>
@@ -98,13 +98,13 @@ export function LiveTonight({ live }: { live: LiveData }) {
                       ))}
                     </>
                   )}
-                  <span className="text-muted-foreground"> · {e.score}</span>
+                  <span className="hidden text-muted-foreground lg:inline"> · {e.score}</span>
                 </span>
-                <span className="flex flex-wrap gap-1">
+                <span className="mt-1.5 flex flex-wrap gap-1 lg:mt-0 lg:max-w-[45%] lg:shrink-0 lg:justify-end">
                   {e.credits.map((c) => (
                     <span
                       key={c.slot}
-                      className="rounded bg-gold px-2 py-0.5 text-sm font-bold text-accent-foreground"
+                      className="whitespace-nowrap rounded bg-gold px-2 py-0.5 text-sm font-bold text-accent-foreground"
                     >
                       {c.name} +{c.pts} → {c.total}
                     </span>

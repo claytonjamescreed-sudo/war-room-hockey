@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { computeLive, gameLabel, hockeyDay, type FeedGame } from "./live";
-import type { Draft, GameLine, Setup } from "./season";
+import { computeLive, gameLabel, hockeyDay, rosterRows, type FeedGame } from "./live";
+import { computeSeason, type Draft, type GameLine, type Setup } from "./season";
 
 const draft: Draft = {
   season: "test",
@@ -208,6 +208,33 @@ describe("computeLive", () => {
     expect(live.ticker[0]!.scorer).toMatchObject({ name: "Ed Eagle", owner: "Aces" });
     // Aardvark 1G 1A, and Eagle a goal plus an assist
     expect(live.teams.find((t) => t.name === "Aces")!.tonight).toBe(4);
+  });
+
+  it("lists a team's players in draft order, with a game that has started counted as played", () => {
+    const live = computeLive({
+      date: "2026-10-03",
+      feeds: [{ date: "2026-10-03", games: tonight }],
+      draft,
+      setup,
+      logs,
+    });
+    const season = computeSeason(draft, setup, {
+      fetchedAt: "",
+      logs,
+      leaders: [],
+      teamGP: {},
+      schedule: [],
+    });
+    const rows = rosterRows(
+      season.teams.find((t) => t.name === "Aces")!,
+      live,
+    );
+    expect(rows.map((r) => [r.p.name, r.round, r.l.gp, r.l.pts, r.left])).toEqual([
+      // Aardvark's game is on: 2 played, 4 points, and 82 of his 84 left
+      ["Al Aardvark", 1, 2, 4, 82],
+      // Dingo's hasn't started
+      ["Di Dingo", 2, 0, 0, 84],
+    ]);
   });
 
   it("turns the hockey day over at 3 AM Pacific, not when NHL.com does", () => {

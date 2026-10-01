@@ -5,8 +5,10 @@ import { Fragment, useState } from "react";
 import { LiveTonight } from "@/components/live-tonight";
 import { NightBrief } from "@/components/night-brief";
 import { TeamLogo } from "@/components/team-logo";
-import { TeamRoster } from "@/components/team-roster";
+import { PlayerTonight, TeamRoster } from "@/components/team-roster";
 import { lockerSearch } from "@/lib/history";
+import { livePlayer, rosterRows, type LiveData, type LiveTeam } from "@/lib/live";
+import { perGame } from "@/lib/man-games";
 import { fmtDate, liveQuery, seasonQuery } from "@/lib/season-query";
 
 export const Route = createFileRoute("/")({
@@ -30,7 +32,9 @@ export const Route = createFileRoute("/")({
       context.queryClient.ensureQueryData(liveQuery),
     ]),
   errorComponent: ({ error }) => (
-    <p className="p-8 text-lg">Standings didn't load: {error instanceof Error ? error.message : String(error)}</p>
+    <p className="p-8 text-lg">
+      Standings didn't load: {error instanceof Error ? error.message : String(error)}
+    </p>
   ),
   notFoundComponent: () => <p className="p-8">Not found</p>,
   component: Standings,
@@ -58,6 +62,89 @@ function Move({ rank, prev, title }: { rank: number; prev: number | null; title:
   );
 }
 
+// Tonight for one team: how many of its players are in action, then its points as they come.
+// Before a game starts "5 playing"; during, "+3" over "2 live · 3 to play"; after, "5 played".
+function TonightCell({ lt }: { lt: LiveTeam | undefined }) {
+  if (!lt || lt.toPlay + lt.playing + lt.done === 0)
+    return <span className="num text-xl text-muted-foreground">–</span>;
+  if (lt.playing + lt.done === 0)
+    return (
+      <span className="whitespace-nowrap">
+        <span className="num text-xl font-bold">{lt.toPlay}</span>{" "}
+        <span className="text-sm text-muted-foreground">playing</span>
+      </span>
+    );
+  const status =
+    [lt.playing ? `${lt.playing} live` : "", lt.toPlay ? `${lt.toPlay} to play` : ""]
+      .filter(Boolean)
+      .join(" · ") || `${lt.done} played`;
+  return (
+    <>
+      <div className="num text-xl">
+        {lt.tonight ? (
+          <span className="rounded bg-gold px-2 py-0.5 font-bold text-accent-foreground">
+            +{lt.tonight}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">0</span>
+        )}
+      </div>
+      <div className="mt-0.5 whitespace-nowrap text-xs text-muted-foreground">{status}</div>
+    </>
+  );
+}
+
+// One player of an opened team, on wide screens: his numbers under the same headings as the
+// teams' (his goals and assists under his points, his draft-day projection under his projection)
+function PlayerRow({
+  p,
+  l,
+  round,
+  left,
+  live,
+  showTonight,
+}: ReturnType<typeof rosterRows>[number] & { live: LiveData; showTonight: boolean }) {
+  const cell = "num px-3 py-2 text-right text-lg";
+  const lastNight = p.lastNight ? p.lastNight.g + p.lastNight.a : 0;
+  return (
+    <tr className="hidden border-t border-border/60 bg-muted/50 lg:table-row">
+      <td />
+      {/* Lined up under the team's name, past its badge */}
+      <td className="py-2 pl-[3.25rem] pr-3">
+        <div className="font-semibold">{p.name}</div>
+        <div className="text-sm text-muted-foreground">
+          {p.team} · {p.pos} · {round != null ? `Rd\u00a0${round}` : "Swap"}
+        </div>
+      </td>
+      <td className="px-3 py-2 text-right">
+        <div className="num text-xl font-bold">{l.pts}</div>
+        <div className="num text-xs text-muted-foreground">
+          {l.g}G {l.a}A
+        </div>
+      </td>
+      {showTonight && (
+        <td className="px-3 py-2 text-right">
+          <PlayerTonight p={p} live={live} />
+        </td>
+      )}
+      <td className={cell}>{lastNight || "–"}</td>
+      <td className={cell}>{p.last7}</td>
+      {/* Back is a team's gap to the leader */}
+      <td />
+      <td className={cell}>{l.gp}</td>
+      <td className={cell}>{perGame(l.pts, l.gp)}</td>
+      <td className={cell}>{p.missed || "–"}</td>
+      <td className={cell}>{left}</td>
+      <td className="px-3 py-2 text-right">
+        <div className="num text-lg font-bold">{p.projected}</div>
+        <div className="text-xs text-muted-foreground">
+          draft {p.preseason != null ? Math.round(p.preseason) : "–"}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 function Standings() {
   const { data } = useSuspenseQuery(seasonQuery);
   const { data: live } = useSuspenseQuery(liveQuery);
@@ -74,6 +161,10 @@ function Standings() {
         pts: useLive && lt ? lt.total : t.pts,
         rank: useLive && lt ? lt.rank : t.rank,
         prev: useLive && lt && scoredTonight ? lt.startRank : t.prevRank,
+        // Games its current players have played, and those of tonight's that have started (so
+        // points per game keeps up with the live points)
+        rosterGP: t.roster.reduce((s, p) => s + p.gp, 0),
+        startedTonight: t.roster.reduce((s, p) => s + livePlayer(p, live).gp - p.gp, 0),
       };
     })
     .sort(
@@ -93,7 +184,8 @@ function Standings() {
       else next.add(slot);
       return next;
     });
-  const cols = live.anyGames ? 8 : 7;
+  // Four of them (the man games and PPG) only show on wide screens
+  const cols = live.anyGames ? 12 : 11;
   return (
     <main className="mx-auto max-w-6xl px-3 py-6 sm:px-4">
       <LiveTonight live={live} />
@@ -118,11 +210,36 @@ function Standings() {
               <th className="px-3 py-3 text-right">Last night</th>
               <th className="px-3 py-3 text-right">Last 7</th>
               <th className="px-3 py-3 text-right">Back</th>
+              {/* Man games: wide screens only; narrower ones have them inside the opened team */}
+              <th
+                className="hidden px-3 py-3 text-right lg:table-cell"
+                title="Man games played: games its players have played while on its roster"
+              >
+                GP
+              </th>
+              <th
+                className="hidden px-3 py-3 text-right lg:table-cell"
+                title="Points per game: the team's points for each game its current players have played"
+              >
+                PPG
+              </th>
+              <th
+                className="hidden px-3 py-3 text-right lg:table-cell"
+                title="Man games missed: games their NHL teams played that they didn't dress for"
+              >
+                Missed
+              </th>
+              <th
+                className="hidden px-3 py-3 text-right lg:table-cell"
+                title="Games left: NHL games its current players still have to play"
+              >
+                Left
+              </th>
               <th className="px-3 py-3 text-right">Proj.</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ t, lt, pts, rank, prev }) => (
+            {rows.map(({ t, lt, pts, rank, prev, rosterGP, startedTonight }) => (
               <Fragment key={t.slot}>
                 <tr className={`border-t ${open.has(t.slot) ? "bg-muted/50" : ""}`}>
                   <td className="px-3 py-3">
@@ -145,8 +262,9 @@ function Standings() {
                         aria-hidden
                       />
                     </button>
+                    {/* Narrower screens, where the Tonight column can be scrolled out of view */}
                     {live.anyGames && lt && (lt.toPlay > 0 || lt.playing > 0) && (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground lg:hidden">
                         {[
                           lt.playing ? `${lt.playing} playing now` : "",
                           lt.toPlay
@@ -160,14 +278,8 @@ function Standings() {
                   </td>
                   <td className="num px-3 py-3 text-right text-3xl font-extrabold">{pts}</td>
                   {live.anyGames && (
-                    <td className="num px-3 py-3 text-right text-xl">
-                      {lt?.tonight ? (
-                        <span className="rounded bg-gold px-2 py-0.5 font-bold text-accent-foreground">
-                          +{lt.tonight}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">–</span>
-                      )}
+                    <td className="px-3 py-3 text-right">
+                      <TonightCell lt={lt} />
                     </td>
                   )}
                   <td className="num px-3 py-3 text-right text-xl">{t.lastNight || "–"}</td>
@@ -175,13 +287,45 @@ function Standings() {
                   <td className="num px-3 py-3 text-right text-xl text-muted-foreground">
                     {leader - pts || "–"}
                   </td>
+                  <td className="num hidden px-3 py-3 text-right text-xl lg:table-cell">
+                    {t.manGames.played + startedTonight}
+                  </td>
+                  <td className="num hidden px-3 py-3 text-right text-xl lg:table-cell">
+                    {perGame(pts, rosterGP + startedTonight)}
+                  </td>
+                  <td className="num hidden px-3 py-3 text-right text-xl lg:table-cell">
+                    {t.manGames.missed || "–"}
+                  </td>
+                  <td className="num hidden px-3 py-3 text-right text-xl lg:table-cell">
+                    {t.manGames.left - startedTonight}
+                  </td>
                   <td className="px-3 py-3 text-right">
                     <div className="num text-xl font-bold">{t.projected}</div>
                     <div className="text-xs text-muted-foreground">draft {t.preseason}</div>
                   </td>
                 </tr>
+                {/* Wide screens: each player under the same columns as the teams */}
+                {open.has(t.slot) &&
+                  rosterRows(t, live).map((r) => (
+                    <PlayerRow key={r.p.id} {...r} live={live} showTonight={live.anyGames} />
+                  ))}
                 {open.has(t.slot) && (
-                  <tr id={`roster-${t.slot}`} className="bg-muted/50">
+                  <tr className="hidden bg-muted/50 lg:table-row">
+                    <td colSpan={cols} className="px-3 pb-3 pt-1 text-right">
+                      <Link
+                        to="/history"
+                        search={lockerSearch(t.name)}
+                        className="font-semibold underline"
+                      >
+                        Team locker →
+                      </Link>
+                    </td>
+                  </tr>
+                )}
+                {/* Narrower screens, where the table doesn't show every column: the team's own
+                    compact table */}
+                {open.has(t.slot) && (
+                  <tr id={`roster-${t.slot}`} className="bg-muted/50 lg:hidden">
                     <td colSpan={cols} className="px-2 pb-4 pt-0">
                       {/* Pinned to the visible width, so on a phone it doesn't scroll with the table */}
                       <div className="sticky left-2 max-w-[calc(100vw-2.5rem)] overflow-x-auto rounded-md border bg-card sm:max-w-none">
@@ -204,6 +348,11 @@ function Standings() {
           </tbody>
         </table>
       </div>
+      <p className="mt-2 hidden text-sm text-muted-foreground lg:block">
+        <b>GP</b> games a team's players have played while on its roster · <b>PPG</b> points per
+        game played · <b>Missed</b> games their NHL teams played without them · <b>Left</b> NHL
+        games its current players still have to play
+      </p>
       {data.lastNight.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 text-3xl font-bold uppercase">

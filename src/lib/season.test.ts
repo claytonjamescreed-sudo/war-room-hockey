@@ -64,6 +64,34 @@ describe("computeSeason (port of season.js)", () => {
     expect(d.available.find((l) => l.id === 9)).toBeUndefined();
   });
 
+  it("adds games left and man games without changing the port's numbers", () => {
+    const d = computeSeason(draft, setup(), raw());
+    const by = Object.fromEntries(d.teams.map((t) => [t.name, t])) as Record<
+      "A" | "B" | "C",
+      (typeof d.teams)[number]
+    >;
+    // Each NHL team has played 2 of 84
+    expect(by.A.roster[0]!.left).toBe(82);
+    expect(by.A.roster[0]!.missed).toBe(0);
+    expect(by.C.roster[0]!.missed).toBe(2);
+    // P1's game before countFrom doesn't count; he and P2 dressed for both of their teams' games
+    expect(by.A.manGames).toEqual({ played: 2, missed: 0, left: 82 });
+    expect(by.B.manGames).toEqual({ played: 2, missed: 0, left: 82 });
+    // P3 dressed for one MTL game; Free's lines show two more MTL games he wasn't in
+    expect(by.C.manGames).toEqual({ played: 1, missed: 2, left: 82 });
+
+    // After a swap the dropped player counts up to the swap date and the new one from it
+    const swapped = computeSeason(
+      draft,
+      setup([{ date: "2026-10-01", slot: 3, out: 3, in: 9 }]),
+      raw(),
+    ).teams.find((t) => t.name === "C")!;
+    // P3's game on 09-29 and Free's on 10-01; P3 missed Free's 09-29 game, Free none since joining
+    expect(swapped.manGames).toEqual({ played: 2, missed: 1, left: 82 });
+    // Free's own row is his whole season, like his points: 2 games, and the MTL game P3 was in
+    expect(swapped.roster[0]).toMatchObject({ id: 9, gp: 2, missed: 1, left: 82 });
+  });
+
   it("projects finish with prior 20 games and 0.45 default rate", () => {
     const d = computeSeason(draft, setup(), raw());
     const a = d.teams.find((t) => t.name === "A")!.roster[0]!;

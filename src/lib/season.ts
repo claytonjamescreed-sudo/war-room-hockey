@@ -1,5 +1,9 @@
 // Faithful TypeScript port of computeSeason() from season.js. Pure, no I/O.
 // Do not change behaviour: tests in season.test.ts pin it.
+// Added on top of the port, changing none of its numbers: each player's games missed and games
+// left, and each team's man games (played and missed from man-games.ts, and games left).
+
+import { manGames, playerManGames } from "./man-games";
 
 export const PRIOR_GAMES = 20;
 export const DEFAULT_RATE = 0.45;
@@ -78,6 +82,9 @@ export type PlayerLine = {
   playsNext: boolean;
   preseason: number | null;
   projected: number;
+  // Games his NHL team has played that he didn't dress for, and games it has left
+  missed: number;
+  left: number;
 };
 
 export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
@@ -147,6 +154,11 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
   );
   const playingNext = new Set(nextDay ? nextDay.games.flatMap((g) => [g.away, g.home]) : []);
 
+  // Games missed, by player and by team (see man-games.ts)
+  const knownTeam = new Map([...info].map(([id, p]) => [id, p.team]));
+  const playerMan = playerManGames(draft, setup, raw.logs, knownTeam);
+  const man = manGames(draft, setup, raw.logs, knownTeam);
+
   const playerLine = (id: number): PlayerLine => {
     const gl = games(id);
     const p = info.get(id) || ({} as Partial<Info>);
@@ -171,11 +183,17 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
         last && last.date === lastDate
           ? { g: last.g, a: last.a, opp: last.opp, home: last.home }
           : null,
-      lastGame: last ? { date: last.date, g: last.g, a: last.a, opp: last.opp, home: last.home } : null,
-      last7: gl.filter((x) => weekStart != null && x.date >= weekStart).reduce((s, x) => s + x.g + x.a, 0),
+      lastGame: last
+        ? { date: last.date, g: last.g, a: last.a, opp: last.opp, home: last.home }
+        : null,
+      last7: gl
+        .filter((x) => weekStart != null && x.date >= weekStart)
+        .reduce((s, x) => s + x.g + x.a, 0),
       playsNext: team != null && playingNext.has(team),
       preseason: p.proj ?? null,
       projected: Math.round(g + a + rate * remaining),
+      missed: playerMan(id).missed,
+      left: remaining,
     };
   };
 
@@ -204,6 +222,12 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
           .filter((p) => p.slot === t.slot)
           .reduce((s, p) => s + (p.preseasonProj || 0), 0),
       ),
+      manGames: {
+        played: man.get(t.slot)?.played ?? 0,
+        missed: man.get(t.slot)?.missed ?? 0,
+        // NHL games its current players still have to play
+        left: current.reduce((s, p) => s + p.left, 0),
+      },
       swapsUsed: moves.filter((m) => m.slot === t.slot).length,
       roster: current.sort((a, b) => b.pts - a.pts || b.g - a.g || a.name.localeCompare(b.name)),
       dropped,
@@ -214,7 +238,9 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
       })),
     };
   });
-  teams.sort((a, b) => a.rank - b.rank || b.projected - a.projected || a.name.localeCompare(b.name));
+  teams.sort(
+    (a, b) => a.rank - b.rank || b.projected - a.projected || a.name.localeCompare(b.name),
+  );
 
   const owner = new Map<number, string>();
   for (const t of teams) for (const p of t.roster) owner.set(p.id, t.name);
@@ -228,7 +254,9 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
         b.lastNight!.g + b.lastNight!.a - (a.lastNight!.g + a.lastNight!.a) ||
         b.lastNight!.g - a.lastNight!.g,
     );
-  const topPool = [...everyone].sort((a, b) => b.pts - a.pts || b.g - a.g || a.gp - b.gp).slice(0, 15);
+  const topPool = [...everyone]
+    .sort((a, b) => b.pts - a.pts || b.g - a.g || a.gp - b.gp)
+    .slice(0, 15);
   const available = raw.leaders.filter((l) => !owner.has(l.id)).slice(0, 15);
 
   return {
@@ -248,7 +276,13 @@ export function computeSeason(draft: Draft, setup: Setup, raw: Raw) {
     available,
     moves: moves.map((m) => {
       const t = draft.teams.find((x) => x.slot === m.slot);
-      return { date: m.date, team: t?.name, slot: m.slot, out: info.get(m.out)?.name, in: info.get(m.in)?.name };
+      return {
+        date: m.date,
+        team: t?.name,
+        slot: m.slot,
+        out: info.get(m.out)?.name,
+        in: info.get(m.in)?.name,
+      };
     }),
   };
 }

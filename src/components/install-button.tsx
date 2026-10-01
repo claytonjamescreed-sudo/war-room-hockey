@@ -70,7 +70,10 @@ function Steps({ device }: { device: Device }) {
             <SquarePlus className="h-5 w-5" aria-hidden />
           </Icon>
         </Step>
-        <Step n={4} note="WG Hockey Pool lands on your Home Screen with the gold icon, one tap away.">
+        <Step
+          n={4}
+          note="WG Hockey Pool lands on your Home Screen with the gold icon, one tap away."
+        >
           Tap Add
         </Step>
       </ol>
@@ -106,7 +109,7 @@ function Steps({ device }: { device: Device }) {
 
 // "Get the app" in the header: the browser's own install prompt where there is one, otherwise the
 // steps to save WG Hockey Pool to the home screen. Hidden once it's opened from the home screen.
-export function InstallButton() {
+export function InstallButton({ variant = "pill" }: { variant?: "pill" | "row" }) {
   const [device, setDevice] = useState<Device | null>(null); // null on the server and when installed
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -123,15 +126,26 @@ export function InstallButton() {
   };
   return (
     <>
-      <button
-        onClick={onClick}
-        aria-label="Get the app"
-        className="flex items-center gap-1.5 rounded-full border border-band-foreground/40 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-band-foreground hover:bg-band-foreground/10 sm:gap-2 sm:px-3 sm:text-sm"
-      >
-        <Smartphone className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
-        {/* On the narrowest phones the icon alone, so the header stays on one line */}
-        <span className="hidden min-[360px]:inline">Get the app</span>
-      </button>
+      {variant === "row" ? (
+        <button
+          onClick={onClick}
+          className="flex w-full items-center gap-3 rounded px-4 py-3 text-left text-lg font-semibold uppercase tracking-wider text-band-foreground/80 hover:bg-band-foreground/10"
+        >
+          <Smartphone className="h-6 w-6" aria-hidden />
+          Get the app
+        </button>
+      ) : (
+        <button
+          onClick={onClick}
+          aria-label="Get the app"
+          className="flex items-center gap-1.5 rounded-full border border-band-foreground/40 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-band-foreground hover:bg-band-foreground/10 sm:gap-2 sm:px-3 sm:text-sm"
+        >
+          <Smartphone className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
+          {/* On most phones the icon alone, so the header stays on one line beside the site's
+              name; the phone menu has it spelled out */}
+          <span className="hidden min-[430px]:inline">Get the app</span>
+        </button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>

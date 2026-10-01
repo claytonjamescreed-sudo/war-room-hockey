@@ -109,7 +109,7 @@ export function SiteHeader() {
             activeOptions={{ exact: true }}
             className="py-1 font-display text-[28px] font-extrabold uppercase leading-none tracking-wide sm:text-3xl xl:py-0 xl:text-4xl"
           >
-            War Room
+            WG Hockey Pool
           </Link>
           <nav
             aria-label="Main"

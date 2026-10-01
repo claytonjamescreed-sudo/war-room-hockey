@@ -8,13 +8,13 @@ import { seasonQuery } from "@/lib/season-query";
 export const Route = createFileRoute("/leaders")({
   head: () => ({
     meta: [
-      { title: "Leaders — War Room Hockey Pool" },
+      { title: "Leaders — WG Hockey Pool" },
       {
         name: "description",
         content:
           "Top pool scorers with their owners, and the best players on no pool team for the All-Star redraft.",
       },
-      { property: "og:title", content: "Leaders — War Room Hockey Pool" },
+      { property: "og:title", content: "Leaders — WG Hockey Pool" },
       { property: "og:description", content: "Top pool scorers and best available players." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

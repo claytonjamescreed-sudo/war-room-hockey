@@ -70,7 +70,7 @@ function Steps({ device }: { device: Device }) {
             <SquarePlus className="h-5 w-5" aria-hidden />
           </Icon>
         </Step>
-        <Step n={4} note="War Room lands on your Home Screen with the gold icon, one tap away.">
+        <Step n={4} note="WG Hockey Pool lands on your Home Screen with the gold icon, one tap away.">
           Tap Add
         </Step>
       </ol>
@@ -105,7 +105,7 @@ function Steps({ device }: { device: Device }) {
 }
 
 // "Get the app" in the header: the browser's own install prompt where there is one, otherwise the
-// steps to save War Room to the home screen. Hidden once it's opened from the home screen.
+// steps to save WG Hockey Pool to the home screen. Hidden once it's opened from the home screen.
 export function InstallButton() {
   const [device, setDevice] = useState<Device | null>(null); // null on the server and when installed
   const [open, setOpen] = useState(false);
@@ -136,7 +136,7 @@ export function InstallButton() {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-3xl font-extrabold uppercase">
-              War Room on your home screen
+              WG Hockey Pool on your home screen
             </DialogTitle>
             <DialogDescription className="text-base">
               It opens like an app: full screen, one tap away, no app store needed.

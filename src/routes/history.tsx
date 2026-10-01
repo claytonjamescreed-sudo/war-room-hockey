@@ -33,13 +33,13 @@ export const Route = createFileRoute("/history")({
   }),
   head: () => ({
     meta: [
-      { title: "History — War Room Hockey Pool" },
+      { title: "History — WG Hockey Pool" },
       {
         name: "description",
         content:
           "Every champion, podium and points total in our pool since 2020-21: six regular seasons and six playoff pools.",
       },
-      { property: "og:title", content: "Banners in the Rafters — War Room Hockey Pool" },
+      { property: "og:title", content: "Banners in the Rafters — WG Hockey Pool" },
       {
         property: "og:description",
         content: "Every champion, podium and points total in our pool since 2020-21.",

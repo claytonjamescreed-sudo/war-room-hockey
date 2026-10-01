@@ -81,18 +81,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "War Room — Hockey Pool" },
+      { title: "WG Hockey Pool" },
       {
         name: "description",
         content: "Standings and live points for our 15-team NHL hockey pool.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      // Saved to a phone's home screen it opens full screen as "War Room" (see install-button.tsx)
+      // Saved to a phone's home screen it opens full screen as "WG Hockey Pool" (see install-button.tsx)
       { name: "theme-color", content: "#15130F" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "War Room" },
+      { name: "apple-mobile-web-app-title", content: "WG Hockey Pool" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black" },
     ],
     links: [

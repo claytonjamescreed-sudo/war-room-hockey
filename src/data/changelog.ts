@@ -13,6 +13,12 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.1.3",
+    date: "2026-10-01",
+    title: "WG Hockey Pool",
+    changes: [{ kind: "improved", text: "The site is now called WG Hockey Pool." }],
+  },
+  {
     version: "1.1.2",
     date: "2026-10-01",
     title: "Tonight means tonight",

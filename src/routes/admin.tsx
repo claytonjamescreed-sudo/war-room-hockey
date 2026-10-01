@@ -21,7 +21,7 @@ export const Route = createFileRoute("/admin")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Commissioner — War Room Hockey Pool" },
+      { title: "Commissioner — WG Hockey Pool" },
       { name: "robots", content: "noindex" },
     ],
   }),

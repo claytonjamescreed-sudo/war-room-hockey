@@ -6,13 +6,13 @@ import { fmtDate } from "@/lib/season-query";
 export const Route = createFileRoute("/whats-new")({
   head: () => ({
     meta: [
-      { title: "What's new — War Room Hockey Pool" },
+      { title: "What's new — WG Hockey Pool" },
       {
         name: "description",
-        content: "Every version of the War Room site and what changed in it.",
+        content: "Every version of the WG Hockey Pool site and what changed in it.",
       },
-      { property: "og:title", content: "What's new — War Room Hockey Pool" },
-      { property: "og:description", content: "Every version of the War Room site." },
+      { property: "og:title", content: "What's new — WG Hockey Pool" },
+      { property: "og:description", content: "Every version of the WG Hockey Pool site." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

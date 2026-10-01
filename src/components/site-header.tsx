@@ -186,9 +186,7 @@ export function SiteFooter() {
   const built = builtAt(__APP_BUILD__);
   return (
     <footer className="mx-auto flex max-w-6xl flex-wrap gap-x-4 gap-y-1 px-4 pb-8 pt-4 text-sm text-muted-foreground">
-      <Link to="/tv" className="hover:underline">
-        TV board
-      </Link>
+      {/* The TV board is opened from the Commissioner page and the draft room, not from here */}
       <Link to="/admin" className="hover:underline">
         Commissioner
       </Link>

@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.4.2",
+    date: "2026-10-01",
+    title: "TV board, by the commissioner",
+    changes: [
+      {
+        kind: "improved",
+        text: "The TV board link is gone from the bottom of the page. The commissioner opens it from the Commissioner page or the draft room.",
+      },
+    ],
+  },
+  {
     version: "1.4.1",
     date: "2026-10-01",
     title: "wghockeypool.com",

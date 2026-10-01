@@ -12,13 +12,13 @@ import { fmtDate, liveQuery, seasonQuery } from "@/lib/season-query";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Standings — War Room Hockey Pool" },
+      { title: "Standings — WG Hockey Pool" },
       {
         name: "description",
         content:
           "Season standings for our 15-team NHL hockey pool: points, live points tonight, last 7 days and projected finish.",
       },
-      { property: "og:title", content: "Standings — War Room Hockey Pool" },
+      { property: "og:title", content: "Standings — WG Hockey Pool" },
       { property: "og:description", content: "Season standings for our 15-team NHL hockey pool." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

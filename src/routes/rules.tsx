@@ -5,9 +5,9 @@ import { fmtDate, seasonQuery } from "@/lib/season-query";
 export const Route = createFileRoute("/rules")({
   head: () => ({
     meta: [
-      { title: "Swaps & Rules — War Room Hockey Pool" },
+      { title: "Swaps & Rules — WG Hockey Pool" },
       { name: "description", content: "How our hockey pool is scored, and the log of All-Star redraft swaps." },
-      { property: "og:title", content: "Swaps & Rules — War Room Hockey Pool" },
+      { property: "og:title", content: "Swaps & Rules — WG Hockey Pool" },
       { property: "og:description", content: "Scoring rules and the All-Star redraft swap log." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

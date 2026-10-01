@@ -7,7 +7,7 @@ import { DraftRoom } from "@/components/draft/room";
 export const Route = createFileRoute("/draft")({
   ssr: false,
   head: () => ({
-    meta: [{ title: "Draft Room — War Room Hockey Pool" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Draft Room — WG Hockey Pool" }, { name: "robots", content: "noindex" }],
   }),
   component: DraftPage,
 });

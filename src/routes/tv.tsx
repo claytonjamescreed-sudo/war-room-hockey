@@ -27,7 +27,7 @@ export const Route = createFileRoute("/tv")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "TV Board — War Room Hockey Pool" },
+      { title: "TV Board — WG Hockey Pool" },
       {
         name: "description",
         content: "Our pool draft, live: every pick and who's still available.",

@@ -17,12 +17,12 @@ import { fmtDate, seasonQuery } from "@/lib/season-query";
 export const Route = createFileRoute("/race")({
   head: () => ({
     meta: [
-      { title: "The Race — War Room Hockey Pool" },
+      { title: "The Race — WG Hockey Pool" },
       {
         name: "description",
         content: "Every pool team's points by date over the season, one small chart per team.",
       },
-      { property: "og:title", content: "The Race — War Room Hockey Pool" },
+      { property: "og:title", content: "The Race — WG Hockey Pool" },
       { property: "og:description", content: "Every pool team's points by date over the season." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -1,6 +1,6 @@
 {
-  "name": "War Room Hockey Pool",
-  "short_name": "War Room",
+  "name": "WG Hockey Pool",
+  "short_name": "WG Pool",
   "description": "Our 15-team NHL hockey pool: standings, live points, lockers and history.",
   "start_url": "/",
   "scope": "/",

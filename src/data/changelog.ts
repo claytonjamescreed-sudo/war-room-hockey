@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.3.2",
+    date: "2026-10-01",
+    title: "Sharper tab icon",
+    changes: [
+      {
+        kind: "improved",
+        text: "The browser tab icon is now a clean square version of the pool's logo, so it looks sharp everywhere.",
+      },
+    ],
+  },
+  {
     version: "1.3.1",
     date: "2026-10-01",
     title: "A logo of our own",

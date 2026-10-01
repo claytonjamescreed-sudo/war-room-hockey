@@ -58,7 +58,7 @@ export const Route = createFileRoute("/history")({
     ]);
   },
   errorComponent: ({ error }) => (
-    <p className="p-8 text-lg">The team lockers didn't load: {error.message}</p>
+    <p className="p-8 text-lg">The team lockers didn't load: {error instanceof Error ? error.message : String(error)}</p>
   ),
   component: History,
 });

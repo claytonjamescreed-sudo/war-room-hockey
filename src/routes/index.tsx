@@ -30,7 +30,7 @@ export const Route = createFileRoute("/")({
       context.queryClient.ensureQueryData(liveQuery),
     ]),
   errorComponent: ({ error }) => (
-    <p className="p-8 text-lg">Standings didn't load: {error.message}</p>
+    <p className="p-8 text-lg">Standings didn't load: {error instanceof Error ? error.message : String(error)}</p>
   ),
   notFoundComponent: () => <p className="p-8">Not found</p>,
   component: Standings,

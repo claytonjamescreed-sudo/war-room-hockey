@@ -11,7 +11,7 @@ export const Route = createFileRoute("/teams/$slot")({
     throw redirect({ to: "/history", search: lockerSearch(team.name) });
   },
   errorComponent: ({ error }) => (
-    <p className="p-8 text-lg">This team didn't load: {error.message}</p>
+    <p className="p-8 text-lg">This team didn't load: {error instanceof Error ? error.message : String(error)}</p>
   ),
   notFoundComponent: () => (
     <p className="p-8 text-lg">

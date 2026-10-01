@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.2.1",
+    date: "2026-10-01",
+    title: "A new address",
+    changes: [
+      {
+        kind: "fixed",
+        text: "The site now lives at wg-hockey-pool.lovable.app, and the morning update follows it there. If you saved the old site to your home screen, add it again from the new address.",
+      },
+    ],
+  },
+  {
     version: "1.2.0",
     date: "2026-10-01",
     title: "Man games and points per game",

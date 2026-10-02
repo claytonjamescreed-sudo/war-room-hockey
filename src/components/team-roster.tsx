@@ -115,13 +115,14 @@ export function TeamRoster({
   full?: boolean;
 }) {
   const rows = rosterRows(team, live);
-  // With tonight's games counted once they start, like the points beside them
-  const startedTonight = rows.reduce((s, r) => s + r.l.gp - r.p.gp, 0);
-  const played = team.manGames.played + startedTonight;
+  // With tonight's games counted once they're over. Points per game counts finished games too:
+  // the points beside it are live, but a game still on isn't a game played yet.
+  const finishedTonight = rows.reduce((s, r) => s + r.l.gp - r.p.gp, 0);
+  const played = team.manGames.played + finishedTonight;
   const { missed } = team.manGames;
-  const teamLeft = team.manGames.left - startedTonight;
+  const teamLeft = team.manGames.left - finishedTonight;
   const teamPPG = perGame(
-    rows.reduce((s, r) => s + r.l.pts, 0),
+    rows.reduce((s, r) => s + r.l.finalPts, 0),
     rows.reduce((s, r) => s + r.l.gp, 0),
   );
   return (
@@ -176,7 +177,7 @@ export function TeamRoster({
                   <PlayerName p={p} round={round} />
                   <div className="num whitespace-nowrap text-sm text-muted-foreground md:hidden">
                     <div>
-                      {l.gp} GP · {perGame(l.pts, l.gp)} PPG
+                      {l.gp} GP · {perGame(l.finalPts, l.gp)} PPG
                     </div>
                     <div>
                       {p.missed} missed · {left} left
@@ -204,7 +205,7 @@ export function TeamRoster({
                   )}
                 </td>
                 <td className="num hidden px-2 py-2 text-right text-lg md:table-cell md:px-3">
-                  {perGame(l.pts, l.gp)}
+                  {perGame(l.finalPts, l.gp)}
                 </td>
                 <td className="num hidden px-2 py-2 text-right text-lg md:table-cell md:px-3">
                   {p.projected}

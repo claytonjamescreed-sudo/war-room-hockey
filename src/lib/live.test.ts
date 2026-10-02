@@ -219,7 +219,7 @@ describe("computeLive", () => {
     expect(live.teams.find((t) => t.name === "Aces")!.tonight).toBe(4);
   });
 
-  it("lists a team's players in draft order, with a game that has started counted as played", () => {
+  it("lists a team's players in draft order, with a game counted as played once it's over", () => {
     const live = computeLive({
       date: "2026-10-03",
       feeds: [{ date: "2026-10-03", games: tonight }],
@@ -238,12 +238,31 @@ describe("computeLive", () => {
       season.teams.find((t) => t.name === "Aces")!,
       live,
     );
-    expect(rows.map((r) => [r.p.name, r.round, r.l.gp, r.l.pts, r.left])).toEqual([
-      // Aardvark's game is on: 2 played, 4 points, and 82 of his 84 left
-      ["Al Aardvark", 1, 2, 4, 82],
+    const aces = season.teams.find((t) => t.name === "Aces")!;
+    const shown = (r: ReturnType<typeof rosterRows>) =>
+      r.map((x) => [x.p.name, x.round, x.l.gp, x.l.pts, x.l.finalPts, x.left]);
+    expect(shown(rows)).toEqual([
+      // Aardvark's game is on: his 2 points tonight show, but it isn't a game played yet, so
+      // points per game is still his 2 points in 1 game, with 83 of his 84 left
+      ["Al Aardvark", 1, 1, 4, 2, 83],
       // Dingo's hasn't started
-      ["Di Dingo", 2, 0, 0, 84],
+      ["Di Dingo", 2, 0, 0, 0, 84],
     ]);
+
+    // The final horn: 2 played, all 4 points count, 82 left
+    const over = computeLive({
+      date: "2026-10-03",
+      feeds: [
+        {
+          date: "2026-10-03",
+          games: tonight.map((g) => (g.id === 201 ? { ...g, gameState: "OFF" } : g)),
+        },
+      ],
+      draft,
+      setup,
+      logs,
+    });
+    expect(shown(rosterRows(aces, over))[0]).toEqual(["Al Aardvark", 1, 2, 4, 4, 82]);
   });
 
   it("counts who's in action tonight, without anyone out on the injury report", () => {

@@ -392,16 +392,27 @@ export function computeLive(input: {
   };
 }
 
-// A player's season with tonight added: games, goals, assists and points as they stand right now
+// A player's season with tonight added: goals, assists and points as they stand right now. Games
+// played wait for the final horn: a game still on isn't a game played yet. So do the points that
+// points per game counts (finalPts, his points in finished games), or tonight's points would be
+// divided by the games before tonight and read too high all evening.
 export function livePlayer(p: PlayerLine, live: LiveData) {
   const lp = live.players[p.id];
-  if (!lp) return { gp: p.gp, g: p.g, a: p.a, pts: p.pts, tonight: null };
+  if (!lp) return { gp: p.gp, g: p.g, a: p.a, pts: p.pts, finalPts: p.pts, tonight: null };
   const g = lp.before.g + lp.g;
   const a = lp.before.a + lp.a;
-  // Tonight's game counts as played once it starts, unless the sync already stored it
+  // Tonight's game counts as played once it's over, unless the sync already stored it
   const synced = !!(p.lastGame && live.date && p.lastGame.date >= live.date);
-  const playing = lp.status === "live" || lp.status === "done";
-  return { gp: p.gp + (playing && !synced ? 1 : 0), g, a, pts: g + a, tonight: lp };
+  const finished = lp.status === "done";
+  const inPlay = lp.status === "live" ? lp.g + lp.a : 0;
+  return {
+    gp: p.gp + (finished && !synced ? 1 : 0),
+    g,
+    a,
+    pts: g + a,
+    finalPts: g + a - inPlay,
+    tonight: lp,
+  };
 }
 
 // A team's players in the order it drafted them, each with tonight added to his season
@@ -415,7 +426,7 @@ export function rosterRows(team: SeasonTeam, live: LiveData) {
         p,
         l,
         round: round.get(p.id) ?? null,
-        // A game that has started tonight counts as played, so it's no longer one of his left
+        // A game finished tonight counts as played, so it's no longer one of his left
         left: p.left - (l.gp - p.gp),
       };
     })

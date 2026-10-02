@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.1",
+    date: "2026-10-01",
+    title: "Games played means games finished",
+    changes: [
+      {
+        kind: "improved",
+        text: "A game now counts in GP once it's over, not from puck drop, and games left drops at the same time. Points per game counts finished games too: tonight's points still show live, and join PPG at the final horn.",
+      },
+    ],
+  },
+  {
     version: "1.5.0",
     date: "2026-10-01",
     title: "A Tonight card that stays short on a busy night",

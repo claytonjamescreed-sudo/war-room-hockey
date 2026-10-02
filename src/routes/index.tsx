@@ -143,7 +143,7 @@ function PlayerRow({
       {/* Back is a team's gap to the leader */}
       <td />
       <td className={cell}>{l.gp}</td>
-      <td className={cell}>{perGame(l.pts, l.gp)}</td>
+      <td className={cell}>{perGame(l.finalPts, l.gp)}</td>
       <td className={cell}>{p.missed || "–"}</td>
       <td className={cell}>{left}</td>
       <td className="px-3 py-2 text-right">
@@ -166,18 +166,20 @@ function Standings() {
   const rows = data.teams
     .map((t) => {
       const lt = liveBySlot.get(t.slot);
+      const now = t.roster.map((p) => livePlayer(p, live));
       return {
         t,
         lt,
         pts: useLive && lt ? lt.total : t.pts,
         rank: useLive && lt ? lt.rank : t.rank,
         prev: useLive && lt && scoredTonight ? lt.startRank : t.prevRank,
-        // Games its current players have played, and those of tonight's that have started (so
-        // points per game keeps up with the live points)
-        rosterGP: t.roster.reduce((s, p) => s + p.gp, 0),
+        // Games its current players have played, tonight's once they're over
+        rosterGP: now.reduce((s, l) => s + l.gp, 0),
+        finishedTonight: now.reduce((s, l, i) => s + l.gp - t.roster[i]!.gp, 0),
+        // Tonight's points in games still on: in the live total, not yet in points per game
+        inPlay: now.reduce((s, l) => s + l.pts - l.finalPts, 0),
         // Who's in action tonight, without anyone on the injury report as out
         c: tonightCounts(t, live),
-        startedTonight: t.roster.reduce((s, p) => s + livePlayer(p, live).gp - p.gp, 0),
       };
     })
     .sort(
@@ -230,13 +232,13 @@ function Standings() {
               {/* Man games: wide screens only; narrower ones have them inside the opened team */}
               <th
                 className="hidden px-3 py-3 text-right lg:table-cell"
-                title="Man games played: games its players have played while on its roster"
+                title="Man games played: finished games its players have played while on its roster"
               >
                 GP
               </th>
               <th
                 className="hidden px-3 py-3 text-right lg:table-cell"
-                title="Points per game: the team's points for each game its current players have played"
+                title="Points per game: the team's points for each game its current players have played. A game still on counts once it's over."
               >
                 PPG
               </th>
@@ -256,7 +258,7 @@ function Standings() {
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ t, lt, pts, rank, prev, rosterGP, startedTonight, c }) => (
+            {rows.map(({ t, lt, pts, rank, prev, rosterGP, finishedTonight, inPlay, c }) => (
               <Fragment key={t.slot}>
                 <tr className={`border-t ${open.has(t.slot) ? "bg-muted/50" : ""}`}>
                   <td className="px-2 py-3 align-top md:px-3 md:align-middle">
@@ -336,16 +338,16 @@ function Standings() {
                     {leader - pts || "–"}
                   </td>
                   <td className="num hidden px-3 py-3 text-right text-xl lg:table-cell">
-                    {t.manGames.played + startedTonight}
+                    {t.manGames.played + finishedTonight}
                   </td>
                   <td className="num hidden px-3 py-3 text-right text-xl lg:table-cell">
-                    {perGame(pts, rosterGP + startedTonight)}
+                    {perGame(pts - inPlay, rosterGP)}
                   </td>
                   <td className="num hidden px-3 py-3 text-right text-xl lg:table-cell">
                     {t.manGames.missed || "–"}
                   </td>
                   <td className="num hidden px-3 py-3 text-right text-xl lg:table-cell">
-                    {t.manGames.left - startedTonight}
+                    {t.manGames.left - finishedTonight}
                   </td>
                   <td className="hidden px-3 py-3 text-right md:table-cell">
                     <div className="num text-xl font-bold">{t.projected}</div>

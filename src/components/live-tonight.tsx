@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { lockerSearch } from "@/lib/history";
-import type { LiveData, TickerPerson } from "@/lib/live";
+import { gamesInOrder, LATEST_GOALS, type LiveData, type TickerPerson } from "@/lib/live";
 import { fmtDate } from "@/lib/season-query";
 
 function statusLine(live: LiveData) {
@@ -28,7 +30,22 @@ function Who({ p }: { p: TickerPerson }) {
 }
 
 export function LiveTonight({ live }: { live: LiveData }) {
+  // A busy night has dozens of pool goals: the newest few show, the rest are a tap away
+  const [allGoals, setAllGoals] = useState(false);
+  const goalsBox = useRef<HTMLDivElement>(null);
+  const closing = useRef(false);
+  const toggleGoals = () => {
+    closing.current = allGoals;
+    setAllGoals(!allGoals);
+  };
+  // Closing a long list leaves the page far below the card: bring its goals back into view
+  useEffect(() => {
+    if (!closing.current) return;
+    closing.current = false;
+    goalsBox.current?.scrollIntoView({ block: "start" });
+  }, [allGoals]);
   if (!live.anyGames) return null;
+  const goals = allGoals ? live.ticker : live.ticker.slice(0, LATEST_GOALS);
   return (
     <section className="mb-8 rounded-md border bg-card" aria-labelledby="tonight-h">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
@@ -48,11 +65,16 @@ export function LiveTonight({ live }: { live: LiveData }) {
           {statusLine(live)}
         </p>
       </div>
-      <ul className="flex flex-wrap gap-2 px-4 py-3" aria-label="Tonight's games">
-        {live.games.map((g) => (
+      {/* Phones: one row to swipe through, however many games there are (a full night
+          is 16, which wrapped into eight rows). Wider screens have the room to show them all. */}
+      <ul
+        className="flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 py-3 md:flex-wrap md:overflow-visible"
+        aria-label="Tonight's games"
+      >
+        {gamesInOrder(live.games).map((g) => (
           <li
             key={g.id}
-            className={`min-w-[9.5rem] rounded border px-3 py-2 ${g.status === "live" ? "border-red" : ""}`}
+            className={`min-w-[9.5rem] shrink-0 snap-start rounded border px-3 py-2 ${g.status === "live" ? "border-red" : ""}`}
           >
             <div className="num flex justify-between gap-3 text-xl font-bold">
               <span>{g.away}</span>
@@ -70,13 +92,18 @@ export function LiveTonight({ live }: { live: LiveData }) {
           </li>
         ))}
       </ul>
-      <div className="border-t px-4 py-3">
-        <h3 className="mb-2 text-xl font-bold uppercase">Pool goals tonight</h3>
+      <div ref={goalsBox} className="scroll-mt-3 border-t px-4 py-3">
+        <h3 className="mb-2 text-xl font-bold uppercase">
+          Pool goals tonight
+          {live.ticker.length > 0 && (
+            <span className="num text-muted-foreground"> · {live.ticker.length}</span>
+          )}
+        </h3>
         {live.ticker.length === 0 ? (
           <p className="text-muted-foreground">No pool player has a point yet tonight.</p>
         ) : (
           <ol className="divide-y" aria-live="polite">
-            {live.ticker.map((e) => (
+            {goals.map((e) => (
               // Phones and tablets: time and score, then the sentence, then the badges, each on its
               // own line. Wide screens: one row. (Side by side on a narrow screen, the badges
               // squeezed the sentence down to a word a line.)
@@ -113,6 +140,24 @@ export function LiveTonight({ live }: { live: LiveData }) {
               </li>
             ))}
           </ol>
+        )}
+        {live.ticker.length > LATEST_GOALS && (
+          <button
+            type="button"
+            onClick={toggleGoals}
+            aria-expanded={allGoals}
+            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded border px-3 py-2.5 font-semibold uppercase tracking-wide hover:bg-muted"
+          >
+            {allGoals ? (
+              <>
+                Show the latest {LATEST_GOALS} <ChevronUp className="h-5 w-5" aria-hidden />
+              </>
+            ) : (
+              <>
+                Show all {live.ticker.length} <ChevronDown className="h-5 w-5" aria-hidden />
+              </>
+            )}
+          </button>
         )}
       </div>
     </section>

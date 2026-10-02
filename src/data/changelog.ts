@@ -13,6 +13,21 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.0",
+    date: "2026-10-01",
+    title: "A Tonight card that stays short on a busy night",
+    changes: [
+      {
+        kind: "improved",
+        text: "Pool goals tonight shows the latest 5, with a button to show them all. On a full night there can be 50 or more, which pushed the standings a long way down the page.",
+      },
+      {
+        kind: "improved",
+        text: "On phones, tonight's games are one row you swipe through, with the games on now first.",
+      },
+    ],
+  },
+  {
     version: "1.4.2",
     date: "2026-10-01",
     title: "TV board, by the commissioner",

@@ -44,6 +44,19 @@ export type LiveGame = {
   label: string;
   start: string | null;
 };
+// Tonight's games with the ones on now first, then the ones still to start, then the finished
+// ones, each group in start-time order as computeLive gives them. Phones show the games as one row
+// to swipe through, so the first few are the ones people see.
+const SHOW_ORDER: Record<PlayerStatus, number> = { live: 0, upcoming: 1, done: 2, none: 3 };
+export const gamesInOrder = (games: LiveGame[]) =>
+  games
+    .map((g, i) => ({ g, i }))
+    .sort((a, b) => SHOW_ORDER[a.g.status] - SHOW_ORDER[b.g.status] || a.i - b.i)
+    .map((x) => x.g);
+
+// How many of the newest goals the Tonight card shows before "Show all"
+export const LATEST_GOALS = 5;
+
 export type TickerPerson = { id: number; name: string; slot: number | null; owner: string | null };
 export type TickerEntry = {
   key: string;

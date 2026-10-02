@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   computeLive,
   gameLabel,
+  gamesInOrder,
   hockeyDay,
   rosterRows,
   tonightCounts,
   type FeedGame,
+  type LiveGame,
 } from "./live";
 import { computeSeason, type Draft, type GameLine, type Setup } from "./season";
 
@@ -317,5 +319,32 @@ describe("computeLive", () => {
         periodDescriptor: { number: 1, periodType: "REG" },
       }),
     ).toBe("End of 1st");
+  });
+
+  it("puts the games on now first, then the ones to come, then the finished ones", () => {
+    const game = (id: number, status: LiveGame["status"]): LiveGame => ({
+      id,
+      state: "",
+      status,
+      away: "AAA",
+      home: "BBB",
+      awayScore: null,
+      homeScore: null,
+      label: "",
+      start: null,
+    });
+    // As computeLive gives them: by start time
+    const night = [
+      game(1, "done"),
+      game(2, "live"),
+      game(3, "done"),
+      game(4, "live"),
+      game(5, "upcoming"),
+      game(6, "upcoming"),
+    ];
+    expect(gamesInOrder(night).map((g) => g.id)).toEqual([2, 4, 5, 6, 1, 3]);
+    // The list it was given is left as it was
+    expect(night.map((g) => g.id)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(gamesInOrder([])).toEqual([]);
   });
 });

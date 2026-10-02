@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.3",
+    date: "2026-10-01",
+    title: "Sign-in emails from the pool",
+    changes: [
+      {
+        kind: "improved",
+        text: "The commissioner's sign-in email now comes from the pool's own address, in the site's gold and black.",
+      },
+    ],
+  },
+  {
     version: "1.5.2",
     date: "2026-10-01",
     title: "The site updates itself",

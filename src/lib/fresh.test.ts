@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { freshStartOnce, isStaleChunk } from "./fresh";
+import { freshStartFor, freshStartOnce, isStaleChunk, leaveOpen } from "./fresh";
 
 function browser(storage = true) {
   const store = new Map<string, string>();
@@ -57,6 +57,33 @@ describe("getting a stale page onto the newest version", () => {
   it("doesn't reload on its own with no storage to keep count in", () => {
     const { reload } = browser(false);
     expect(freshStartOnce(1_000_000)).toBe(false);
+    expect(freshStartFor("build2", "/")).toBe(false);
     expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("updates on its own once for each new build", () => {
+    const { reload, doc } = browser();
+    expect(freshStartFor("build2", "/")).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(doc.cookie).toBe("__dpl=; Max-Age=0; path=/; secure; samesite=lax");
+    // Still on the old build after that: the reload didn't work, so it's left to the button
+    expect(freshStartFor("build2", "/race")).toBe(false);
+    expect(reload).toHaveBeenCalledTimes(1);
+    // The next publish gets its own try
+    expect(freshStartFor("build3", "/race")).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(2);
+  });
+
+  it("leaves the commissioner's pages and the TV board to the button", () => {
+    const { reload } = browser();
+    for (const path of ["/admin", "/draft", "/tv", "/admin/"]) {
+      expect(leaveOpen(path)).toBe(true);
+      expect(freshStartFor("build2", path)).toBe(false);
+    }
+    expect(reload).not.toHaveBeenCalled();
+    for (const path of ["/", "/race", "/history", "/whats-new", "/tvguide"])
+      expect(leaveOpen(path)).toBe(false);
+    // Turned down on a commissioner's page, it still gets its try on a public one
+    expect(freshStartFor("build2", "/")).toBe(true);
   });
 });

@@ -13,6 +13,25 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.2",
+    date: "2026-10-01",
+    title: "The site updates itself",
+    changes: [
+      {
+        kind: "improved",
+        text: "When a new version is out, the site now updates itself as you open it or come back to it, with nothing to tap. Update now only appears if a new version comes out while you're looking at the page.",
+      },
+      {
+        kind: "improved",
+        text: "On phones, Update now is a bar across the top of the page instead of a button in the bottom corner.",
+      },
+      {
+        kind: "improved",
+        text: "Pool goals tonight is tidier: the team that gets the point is in yellow beside its player, and the running-total badges are gone.",
+      },
+    ],
+  },
+  {
     version: "1.5.1",
     date: "2026-10-01",
     title: "Games played means games finished",

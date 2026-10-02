@@ -160,10 +160,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      {/* First, so that on phones its bar sits above the header */}
+      <UpdateNotice />
       {!bare && <SiteHeader />}
       <Outlet />
       {!bare && <SiteFooter />}
-      <UpdateNotice />
     </QueryClientProvider>
   );
 }

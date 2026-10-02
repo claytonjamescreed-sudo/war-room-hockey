@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.3",
+    date: "2026-10-02",
+    title: "A shorter scorers list",
+    changes: [
+      {
+        kind: "improved",
+        text: "The scorers list under the standings shows the top 5 from the last game day, with a button to show them all. After a full night it ran to dozens of names.",
+      },
+    ],
+  },
+  {
     version: "1.5.2",
     date: "2026-10-01",
     title: "The site updates itself",

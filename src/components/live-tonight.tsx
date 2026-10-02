@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ShowAllButton } from "@/components/show-all";
+import { useShowAll } from "@/hooks/use-show-all";
 import { lockerSearch } from "@/lib/history";
 import { gamesInOrder, LATEST_GOALS, type LiveData, type TickerPerson } from "@/lib/live";
 import { fmtDate } from "@/lib/season-query";
@@ -32,19 +32,7 @@ function Who({ p }: { p: TickerPerson }) {
 
 export function LiveTonight({ live }: { live: LiveData }) {
   // A busy night has dozens of pool goals: the newest few show, the rest are a tap away
-  const [allGoals, setAllGoals] = useState(false);
-  const goalsBox = useRef<HTMLDivElement>(null);
-  const closing = useRef(false);
-  const toggleGoals = () => {
-    closing.current = allGoals;
-    setAllGoals(!allGoals);
-  };
-  // Closing a long list leaves the page far below the card: bring its goals back into view
-  useEffect(() => {
-    if (!closing.current) return;
-    closing.current = false;
-    goalsBox.current?.scrollIntoView({ block: "start" });
-  }, [allGoals]);
+  const { all: allGoals, toggle: toggleGoals, box: goalsBox } = useShowAll<HTMLDivElement>();
   if (!live.anyGames) return null;
   const goals = allGoals ? live.ticker : live.ticker.slice(0, LATEST_GOALS);
   return (
@@ -131,22 +119,12 @@ export function LiveTonight({ live }: { live: LiveData }) {
           </ol>
         )}
         {live.ticker.length > LATEST_GOALS && (
-          <button
-            type="button"
-            onClick={toggleGoals}
-            aria-expanded={allGoals}
-            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded border px-3 py-2.5 font-semibold uppercase tracking-wide hover:bg-muted"
-          >
-            {allGoals ? (
-              <>
-                Show the latest {LATEST_GOALS} <ChevronUp className="h-5 w-5" aria-hidden />
-              </>
-            ) : (
-              <>
-                Show all {live.ticker.length} <ChevronDown className="h-5 w-5" aria-hidden />
-              </>
-            )}
-          </button>
+          <ShowAllButton
+            all={allGoals}
+            total={live.ticker.length}
+            few={`the latest ${LATEST_GOALS}`}
+            onToggle={toggleGoals}
+          />
         )}
       </div>
     </section>

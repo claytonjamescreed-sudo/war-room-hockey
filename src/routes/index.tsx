@@ -5,10 +5,13 @@ import { Fragment, useState } from "react";
 import { LiveTonight } from "@/components/live-tonight";
 import { NightBrief } from "@/components/night-brief";
 import { TeamLogo } from "@/components/team-logo";
+import { ShowAllButton } from "@/components/show-all";
+import { useShowAll } from "@/hooks/use-show-all";
 import { PlayerName, PlayerTonight, TeamRoster } from "@/components/team-roster";
 import { lockerSearch } from "@/lib/history";
 import { livePlayer, rosterRows, tonightCounts, type LiveData } from "@/lib/live";
 import { perGame } from "@/lib/man-games";
+import type { SeasonData } from "@/lib/season";
 import { fmtDate, liveQuery, seasonQuery } from "@/lib/season-query";
 
 export const Route = createFileRoute("/")({
@@ -403,25 +406,50 @@ function Standings() {
         game played · <b>Missed</b> games their NHL teams played without them · <b>Left</b> NHL
         games its current players still have to play
       </p>
-      {data.lastNight.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 text-3xl font-bold uppercase">
-            Scorers {fmtDate(data.lastDate, { weekday: "short", month: "short", day: "numeric" })}
-          </h2>
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {data.lastNight.map((p) => (
-              <li key={p.id} className="flex justify-between rounded border bg-card px-4 py-3">
-                <span>
-                  <b>{p.name}</b> <span className="text-muted-foreground">({p.owner})</span>
-                </span>
-                <span className="num text-lg">
-                  {p.lastNight!.g}G {p.lastNight!.a}A
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {data.lastNight.length > 0 && <Scorers players={data.lastNight} date={data.lastDate} />}
     </main>
+  );
+}
+
+// How many of the last game day's scorers show before "Show all": the top 5, and a 6th on wider
+// screens, where they sit two to a row
+const TOP_SCORERS = 5;
+
+// The last game day's scorers, most points first (as computeSeason gives them)
+function Scorers({ players, date }: { players: SeasonData["lastNight"]; date: string | null }) {
+  const { all, toggle, box } = useShowAll<HTMLElement>();
+  const shown = all ? players : players.slice(0, TOP_SCORERS + 1);
+  return (
+    <section ref={box} className="mt-8 scroll-mt-3">
+      <h2 className="mb-3 text-3xl font-bold uppercase">
+        Scorers {fmtDate(date, { weekday: "short", month: "short", day: "numeric" })}
+        <span className="num text-muted-foreground"> · {players.length}</span>
+      </h2>
+      <ul className="grid gap-2 sm:grid-cols-2">
+        {shown.map((p, i) => (
+          <li
+            key={p.id}
+            className={`justify-between rounded border bg-card px-4 py-3 ${
+              !all && i === TOP_SCORERS ? "hidden sm:flex" : "flex"
+            }`}
+          >
+            <span>
+              <b>{p.name}</b> <span className="text-muted-foreground">({p.owner})</span>
+            </span>
+            <span className="num text-lg">
+              {p.lastNight!.g}G {p.lastNight!.a}A
+            </span>
+          </li>
+        ))}
+      </ul>
+      {players.length > TOP_SCORERS + 1 && (
+        <ShowAllButton
+          all={all}
+          total={players.length}
+          few={`the top ${TOP_SCORERS}`}
+          onToggle={toggle}
+        />
+      )}
+    </section>
   );
 }

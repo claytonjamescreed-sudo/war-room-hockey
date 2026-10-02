@@ -13,13 +13,24 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
-    version: "1.5.3",
+    version: "1.5.4",
     date: "2026-10-02",
     title: "A shorter scorers list",
     changes: [
       {
         kind: "improved",
         text: "The scorers list under the standings shows the top 5 from the last game day, with a button to show them all. After a full night it ran to dozens of names.",
+      },
+    ],
+  },
+  {
+    version: "1.5.3",
+    date: "2026-10-01",
+    title: "Sign-in emails from the pool",
+    changes: [
+      {
+        kind: "improved",
+        text: "The commissioner's sign-in email now comes from the pool's own address, in the site's gold and black.",
       },
     ],
   },

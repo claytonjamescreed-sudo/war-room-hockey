@@ -430,7 +430,10 @@ function Scorers({ players, date }: { players: SeasonData["lastNight"]; date: st
           <li
             key={p.id}
             className={`justify-between rounded border bg-card px-4 py-3 ${
-              !all && i === TOP_SCORERS ? "hidden sm:flex" : "flex"
+              // Hidden on phones only when the Show all button is there to bring it back
+              !all && i === TOP_SCORERS && players.length > TOP_SCORERS + 1
+                ? "hidden sm:flex"
+                : "flex"
             }`}
           >
             <span>

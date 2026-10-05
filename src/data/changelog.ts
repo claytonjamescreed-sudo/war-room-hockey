@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.5",
+    date: "2026-10-05",
+    title: "Every scorer shows on phones",
+    changes: [
+      {
+        kind: "fixed",
+        text: "When exactly 6 pool players scored, phones showed only 5 of them with no way to see the sixth.",
+      },
+    ],
+  },
+  {
     version: "1.5.4",
     date: "2026-10-02",
     title: "A shorter scorers list",

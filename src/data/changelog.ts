@@ -13,6 +13,21 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.6.0",
+    date: "2026-10-08",
+    title: "The recap gets a broadcast booth",
+    changes: [
+      {
+        kind: "new",
+        text: "Each morning's recap is called from a different Vancouver booth, in turn: John Shorthouse, John Garrett, Jim Robson and Don Taylor, with some of their best-known lines. No two days in a row sound alike.",
+      },
+      {
+        kind: "new",
+        text: "New in the recap: three stars of the night, the week's hottest team, the injury ward, and a tip of the cap to a day-to-day player who played anyway.",
+      },
+    ],
+  },
+  {
     version: "1.5.5",
     date: "2026-10-05",
     title: "Every scorer shows on phones",

@@ -2,50 +2,49 @@
 // game day, written from the season data (who won the night, the pool's best line, the lead, who
 // moved, who got blanked). Pure, tested in brief.test.ts.
 //
-// Each game day is called from one of four Vancouver booths in turn, so no two days in a row
-// sound alike: John Shorthouse, John Garrett, Jim Robson and Don Taylor. A booth brings its own
-// opening, sign-off, shouts and a few lines of its own, and one segment the others don't do
-// (three stars, the injury ward, the week's hottest team). The wording within a booth rotates with
-// the date, so it's the same for everyone that day.
+// Each game day is called from one of five Vancouver booths in turn (src/data/booths.ts): John
+// Shorthouse, John Garrett, Jim Robson, Don Taylor and Tom Larscheid. A booth brings its opening,
+// sign-off, shouts and a saying of the day, now and then a line of its own for the night, and one
+// segment the others don't do (three stars, the injury ward, the week's hottest or coldest team).
 //
-// The booths quote only lines these broadcasters are known for (sourced: Shorthouse's "Lets it go,
-// he scores!" and "They've slayed the dragon!"; Robson's hello to the hospital patients and
-// shut-ins, his "Greg Adams! Greg Adams!" double call and "He will play, you know he will play!";
-// Taylor's "up to date in the world of sports", the top shelf "where Grandma keeps the peanut
-// butter", "the mesh ripples", Danny Gallivan's "scintillating" and Jim Van Horne's moustache as
-// the judge; Garrett's ketchup, his food talk and his cup-half-full optimism). Everything else is
-// our own words in their spirit: never put a new sentence in their mouths as a quote.
+// Nothing repeats until it has to: every list is gone through in turn (nth), the booth's lists
+// once per time it calls a game day and the house wording once per game day, so a line comes back
+// only after the rest of its list has been used. The same day always reads the same for everyone.
+import { BOOTHS, type BoothId, type Shout } from "../data/booths";
 import { isOut } from "./injuries";
 import { ord } from "./history";
 import type { SeasonData } from "./season";
+
+export { BOOTHS, type BoothId };
 
 // Team and player names come back as their own parts so the page can link and bold them
 export type BriefPart = string | { team: string } | { player: string };
 export type BriefLine = BriefPart[];
 
-export type BoothId = "shorty" | "cheech" | "robson" | "taylor";
-export const BOOTHS: Record<BoothId, { name: string; nickname: string }> = {
-  shorty: { name: "John Shorthouse", nickname: "Shorty" },
-  cheech: { name: "John Garrett", nickname: "Cheech" },
-  robson: { name: "Jim Robson", nickname: "Robbie" },
-  taylor: { name: "Don Taylor", nickname: "The Don" },
-};
-const ROTATION: BoothId[] = ["shorty", "cheech", "robson", "taylor"];
+const ROTATION: BoothId[] = ["shorty", "cheech", "robson", "taylor", "tommy"];
 
+export const dayNumber = (date: string) => Math.floor(Date.parse(`${date}T12:00:00Z`) / 86_400_000);
 // One booth a day, in turn, so the next game day always has a different one
-export const boothFor = (date: string) =>
-  ROTATION[Math.floor(Date.parse(`${date}T12:00:00Z`) / 86_400_000) % ROTATION.length]!;
+export const boothFor = (date: string) => ROTATION[dayNumber(date) % ROTATION.length]!;
 
-// The booth's greeting, an opening shout ("Hats on the ice!") for a big night, the rundown, and
-// the booth's sign-off
+// The booth's greeting, an opening shout ("Hats on the ice!") for a big night, the rundown, the
+// booth's saying of the day and its sign-off
 export type Brief = {
   booth: BoothId | null;
   open: BriefLine | null;
   shout: string | null;
   lines: BriefLine[];
+  saying: string | null;
   signoff: BriefLine | null;
 };
-const NOTHING: Brief = { booth: null, open: null, shout: null, lines: [], signoff: null };
+const NOTHING: Brief = {
+  booth: null,
+  open: null,
+  shout: null,
+  lines: [],
+  saying: null,
+  signoff: null,
+};
 
 export const briefText = (line: BriefLine) =>
   line.map((p) => (typeof p === "string" ? p : "team" in p ? p.team : p.player)).join("");
@@ -77,26 +76,78 @@ function names(teams: Team[]): BriefPart[] {
 // Groups this big read better as a count than a list of names
 const MAX_NAMES = 4;
 
+// A booth's running jokes: one recap tells each at most once
+const MOTIFS = [
+  "moustache",
+  "peanut butter",
+  "mesh",
+  "scintillating",
+  "rapier",
+  "ketchup",
+  "half full",
+  "hot dog",
+  "fries",
+  "plate",
+  "dragon",
+  "lets it go",
+  "fire",
+  "effort",
+];
+
 function hash(s: string) {
   let h = 0;
   for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0;
   return Math.abs(h);
+}
+const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
+
+// The k-th item of a list, going through it in a scattered order (a step that shares no factor
+// with the list's length, from a start of its own for each key): k, k+1, … k+length-1 give every
+// item exactly once, so nothing repeats until the whole list has been used
+export function nth<T>(list: T[], k: number, key: string): T {
+  const n = list.length;
+  let step = 1 + (hash(key) % Math.max(1, n - 1));
+  while (gcd(step, n) !== 1) step++;
+  return list[(hash(`${key}#`) + k * step) % n]!;
 }
 
 export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastDate">): Brief {
   const { teams, lastNight: scorers, lastDate } = data;
   const top = Math.max(0, ...teams.map((t) => t.lastNight));
   if (top === 0 || !lastDate) return NOTHING;
+  const day = dayNumber(lastDate);
   const booth = boothFor(lastDate);
-  // The same choice all day for everyone, a different one the next game day
-  const pick = <T>(key: string, options: T[]) =>
-    options[hash(`${lastDate}|${key}`) % options.length]!;
-  // The booth's own wording two times in three when it has some, the house wording otherwise
-  const call = <T>(key: string, own: Partial<Record<BoothId, T[]>>, house: T[]) => {
-    const mine = own[booth] ?? [];
-    return mine.length && hash(`${lastDate}|${key}|booth`) % 3 < 2
-      ? pick(key, mine)
-      : pick(key, house);
+  // How many game days this booth has called before: its lists go round once per call
+  const turn = Math.floor(day / ROTATION.length);
+  const bank = BOOTHS[booth];
+  const fromBooth = <T>(key: string, list: T[]) => nth(list, turn, `${booth}|${key}`);
+  // The house wording for the night's numbers: a different one each game day
+  const house = <T>(key: string, options: T[]) => nth(options, day, key);
+  // The booth's saying of the day, chosen first so nothing else today tells the same joke
+  const saying = fromBooth("saying", bank.sayings);
+  const open = fromBooth("open", bank.open);
+  const signoff = fromBooth("signoff", bank.signoff);
+  const shared = (a: string, b: string) =>
+    MOTIFS.some((m) => a.toLowerCase().includes(m) && b.toLowerCase().includes(m));
+  const repeats = (text: string) => shared(`${open} ${saying} ${signoff}`, text);
+  // The booth's next line from a list, or the one after it if that one tells today's joke again
+  const freshFromBooth = (key: string, list: BriefLine[]) =>
+    list
+      .map((_, i) => nth(list, turn + i, `${booth}|${key}`))
+      .find((l) => !repeats(briefText(l))) ?? fromBooth(key, list);
+  // A line of the booth's own one turn in three, going round its own list; the house wording
+  // otherwise, so a booth's line for a moment doesn't come back every time it calls
+  const flavour = (
+    key: string,
+    own: Partial<Record<BoothId, BriefLine[]>>,
+    options: BriefLine[],
+  ) => {
+    const mine = own[booth];
+    const line =
+      mine?.length && (turn + hash(key)) % 3 === 0
+        ? nth(mine, Math.floor(turn / 3), `${booth}|${key}`)
+        : null;
+    return line && !repeats(briefText(line)) ? line : house(key, options);
   };
   const place = (rank: number) =>
     (teams.filter((t) => t.rank === rank).length > 1 ? "T-" : "") + ord(rank);
@@ -112,10 +163,12 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
     else {
       mentioned.push(best);
       const p = { player: best.name };
+      const s = stat(best);
+      const n = pts(top);
       lines.push(
         nightPts(best) === top
-          ? call<BriefLine>(
-              "win",
+          ? flavour(
+              "carried",
               {
                 shorty: scored(best)
                   ? [
@@ -123,7 +176,7 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
                         p,
                         " lets it go, he scores! ",
                         w,
-                        ` rides ${stat(best)} to ${pts(top)}, the best night in the pool.`,
+                        ` rides ${s} to ${n}, the best night in the pool.`,
                       ],
                     ]
                   : [],
@@ -132,16 +185,7 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
                     p,
                     " was the whole meal for ",
                     w,
-                    `: ${stat(best)}, ${pts(top)}, and nobody in the pool ate better.`,
-                  ],
-                ],
-                robson: [
-                  [
-                    "What a night for ",
-                    p,
-                    `: ${stat(best)}, carrying `,
-                    w,
-                    ` to ${pts(top)}, best in the pool.`,
+                    `: ${s}, ${n}, and nobody in the pool ate better.`,
                   ],
                 ],
                 taylor: scored(best)
@@ -149,101 +193,75 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
                       [
                         "The mesh ripples for ",
                         p,
-                        `: ${stat(best)}, carrying `,
+                        `: ${s}, carrying `,
                         w,
-                        ` to ${pts(top)}, tops in the pool.`,
+                        ` to ${n}, tops in the pool.`,
                       ],
                     ]
                   : [],
+                tommy: [
+                  [p, " showed up for ", w, `: ${s}, ${n}, the best night in the pool. I love it!`],
+                ],
               },
               [
-                [
-                  p,
-                  " single-handedly carried ",
-                  w,
-                  `: ${stat(best)}, ${pts(top)} and the best night in the pool.`,
-                ],
-                [
-                  w,
-                  " rode ",
-                  p,
-                  ` all night long: ${stat(best)} for ${pts(top)}, and nobody in the pool did better.`,
-                ],
-                [
-                  p,
-                  " was the whole show for ",
-                  w,
-                  `: ${stat(best)} for ${pts(top)}, tops on the night.`,
-                ],
+                [p, " carried ", w, ` with ${s}: ${n} and the best night in the pool.`],
+                [w, " rode ", p, ` all night: ${s} for ${n}, tops in the pool.`],
+                [p, " was the whole show for ", w, `: ${s}, ${n}.`],
+                ["The night belonged to ", w, ", thanks to ", p, `: ${s} for ${n}.`],
+                [p, " did it all for ", w, `: ${s}, ${n}, best in the pool.`],
+                ["One-man show: ", p, ` had ${s}, and `, w, ` won the night with ${n}.`],
+                [p, " put ", w, ` on his back: ${s} and ${n}, the best night in the pool.`],
+                ["Best in the pool: ", w, ` with ${n}, courtesy of `, p, `: ${s}.`],
+                [w, " won the night on the back of ", p, `: ${s} for ${n}.`],
+                ["What a night for ", p, `: ${s}, carrying `, w, ` to ${n}, best in the pool.`],
               ],
             )
-          : call<BriefLine>(
-              "win",
+          : flavour(
+              "won",
               {
                 cheech: [
-                  [
-                    w,
-                    ` cleaned their plate: ${pts(top)} to win the night, with `,
-                    p,
-                    ` serving up ${stat(best)}.`,
-                  ],
-                ],
-                robson: [
-                  [
-                    w,
-                    ` had the best night in the pool, ${pts(top)}, with `,
-                    p,
-                    ` leading the way: ${stat(best)}.`,
-                  ],
+                  [w, ` cleaned their plate: ${n} to win the night, with `, p, ` serving up ${s}.`],
                 ],
                 taylor: scored(best)
-                  ? [
-                      [
-                        w,
-                        ` won the night with ${pts(top)}, and the mesh rippled for `,
-                        p,
-                        `: ${stat(best)}.`,
-                      ],
-                    ]
+                  ? [[w, ` won the night with ${n}, and the mesh rippled for `, p, `: ${s}.`]]
                   : [],
               },
               [
-                [
-                  w,
-                  ` won the night with ${pts(top)}, and `,
-                  p,
-                  ` led the charge with ${stat(best)}.`,
-                ],
-                [
-                  w,
-                  ` piled up ${pts(top)} to take the night, with `,
-                  p,
-                  ` chipping in ${stat(best)}.`,
-                ],
-                [
-                  "Nobody had a better night than ",
-                  w,
-                  `: ${pts(top)}, led by `,
-                  p,
-                  ` with ${stat(best)}.`,
-                ],
+                [w, ` won the night with ${n}, and `, p, ` led the charge with ${s}.`],
+                [w, ` piled up ${n} to take the night, with `, p, ` chipping in ${s}.`],
+                ["Nobody had a better night than ", w, `: ${n}, led by `, p, ` with ${s}.`],
+                [w, ` topped the pool with ${n}. `, p, ` did the most damage: ${s}.`],
+                ["The best night in the pool went to ", w, `: ${n}, with ${s} from `, p, "."],
+                [w, ` cashed in for ${n}, and `, p, ` was the headliner with ${s}.`],
+                [w, ` had the hot hand: ${n}, with `, p, ` leading the way with ${s}.`],
+                ["Top of the night: ", w, ` with ${n}. `, p, ` had ${s}.`],
+                [w, ` won the night with ${n}, paced by `, p, `: ${s}.`],
+                [p, ` had ${s} as `, w, ` won the night with ${n}.`],
+                [w, ` had the pool's best night, ${n}, with `, p, ` leading the way: ${s}.`],
               ],
             ),
       );
     }
   } else if (winners.length <= MAX_NAMES) {
+    const n = pts(top);
     lines.push(
-      call<BriefLine>(
-        "win",
-        { cheech: [[...names(winners), ` shared the plate, ${pts(top)} apiece.`]] },
-        [
-          [...names(winners), ` split the night's spoils, ${pts(top)} apiece.`],
-          ["Dead heat for the night's best: ", ...names(winners), ` with ${pts(top)} each.`],
-        ],
-      ),
+      flavour("shared", { cheech: [[...names(winners), ` shared the plate, ${n} apiece.`]] }, [
+        [...names(winners), ` split the night's spoils, ${n} apiece.`],
+        ["Dead heat for the night's best: ", ...names(winners), ` with ${n} each.`],
+        [...names(winners), ` shared the night, ${n} each.`],
+        ["No clear winner last night: ", ...names(winners), ` each had ${n}.`],
+        [...names(winners), ` tied for the night's best with ${n}.`],
+        ["A share of the night for ", ...names(winners), `: ${n} each.`],
+      ]),
     );
   } else {
-    lines.push([`A crowded night at the top: ${winners.length} teams tied with ${pts(top)} each.`]);
+    lines.push(
+      house<BriefLine>("crowd", [
+        [`A crowded night at the top: ${winners.length} teams tied with ${pts(top)} each.`],
+        [`${winners.length} teams shared the night's best, ${pts(top)} apiece.`],
+        [`No clear winner last night: ${winners.length} teams had ${pts(top)} each.`],
+      ]),
+    );
   }
 
   // The night's best players: the booth's own segment if it has one that fits, otherwise the
@@ -262,15 +280,33 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
   } else if (threeStars) {
     const [first, second, third] = scorers as [Scorer, Scorer, Scorer];
     mentioned.push(first, second, third);
-    lines.push([
-      "Three stars: number three, ",
-      { player: third.name },
-      `, ${stat(third)}; number two, `,
-      { player: second.name },
-      `, ${stat(second)}; and the first star, `,
-      { player: first.name },
-      `, ${stat(first)}.`,
-    ]);
+    const [p1, p2, p3] = [first, second, third].map((s) => ({ player: s.name }));
+    const [s1, s2, s3] = [first, second, third].map(stat);
+    lines.push(
+      fromBooth<BriefLine>("stars", [
+        [
+          "Three stars: number three, ",
+          p3!,
+          `, ${s3}; number two, `,
+          p2!,
+          `, ${s2}; and the first star, `,
+          p1!,
+          `, ${s1}.`,
+        ],
+        ["Last night's three stars: ", p1!, ` (${s1}), `, p2!, ` (${s2}) and `, p3!, ` (${s3}).`],
+        ["The three stars: third, ", p3!, "; second, ", p2!, "; and first, ", p1!, `, with ${s1}.`],
+        [
+          "Your three stars: ",
+          p3!,
+          `, ${s3}; `,
+          p2!,
+          `, ${s2}; and the first star, `,
+          p1!,
+          `, ${s1}.`,
+        ],
+        ["And the three stars of the night: ", p1!, ", ", p2!, " and ", p3!, "."],
+      ]),
+    );
   } else if (
     star &&
     !mentioned.includes(star) &&
@@ -280,27 +316,25 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
     mentioned.push(star);
     const p = { player: star.name };
     const t = { team: star.owner };
+    const s = stat(star);
     lines.push(
-      call<BriefLine>(
+      flavour(
         "star",
         {
-          cheech: [["Tip of the cap and a side of fries to ", p, `: ${stat(star)} for `, t, "."]],
+          cheech: [["Tip of the cap and a side of fries to ", p, `: ${s} for `, t, "."]],
           taylor: scored(star)
-            ? [
-                [
-                  p,
-                  " went top shelf, where Grandma keeps the peanut butter: ",
-                  `${stat(star)} for `,
-                  t,
-                  ".",
-                ],
-              ]
+            ? [[p, " went top shelf, where Grandma keeps the peanut butter: ", `${s} for `, t, "."]]
             : [],
         },
         [
-          ["Tip of the cap to ", p, `, who had ${stat(star)} for `, t, "."],
-          ["Don't sleep on ", p, `: ${stat(star)} for `, t, "."],
-          [t, " will want to frame ", p, `'s night: ${stat(star)}.`],
+          ["Tip of the cap to ", p, `, who had ${s} for `, t, "."],
+          ["Don't sleep on ", p, `: ${s} for `, t, "."],
+          [t, " will want to frame ", p, `'s night: ${s}.`],
+          ["Honourable mention: ", p, ` with ${s} for `, t, "."],
+          [p, ` chipped in ${s} for `, t, "."],
+          ["Also worth a mention: ", p, `, ${s} for `, t, "."],
+          ["Big line for ", p, `: ${s}, all for `, t, "."],
+          ["The pool's best line belonged to ", p, `: ${s} for `, t, "."],
         ],
       ),
     );
@@ -314,34 +348,41 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
     const nextRank = Math.min(...teams.filter((t) => t.rank > 1).map((t) => t.rank));
     const second = teams.filter((t) => t.rank === nextRank);
     if (second.length > 0) {
-      const n = leaders[0]!.pts - second[0]!.pts;
+      const gap = leaders[0]!.pts - second[0]!.pts;
+      const n = pts(gap);
       const s = { team: second[0]!.name };
       if (second.length > 1)
         lines.push(
           tookOver
-            ? [l, ` climbs into 1st, ${pts(n)} clear of the pack.`]
-            : [l, ` leads the pack by ${pts(n)}.`],
+            ? house<BriefLine>("over-pack", [
+                [l, ` climbs into 1st, ${n} clear of the pack.`],
+                [l, ` takes over 1st, ${n} clear of the pack.`],
+                [l, ` moves to the top, ${n} ahead of the pack.`],
+              ])
+            : house<BriefLine>("pack", [
+                [l, ` leads the pack by ${n}.`],
+                [l, ` is ${n} clear of a crowd in 2nd.`],
+                [l, ` holds 1st, ${n} up on a logjam behind.`],
+              ]),
         );
       else if (tookOver)
         lines.push(
-          pick("lead", [
-            [l, ` climbs into 1st, ${pts(n)} ahead of `, s, "."],
-            [l, ` grabs the top spot, ${pts(n)} clear of `, s, "."],
+          house<BriefLine>("over", [
+            [l, ` climbs into 1st, ${n} ahead of `, s, "."],
+            [l, ` grabs the top spot, ${n} clear of `, s, "."],
+            [l, ` takes over 1st, ${n} up on `, s, "."],
+            [l, ` moves into 1st, ${n} ahead of `, s, "."],
+            [l, ` is the new leader, ${n} clear of `, s, "."],
           ]),
         );
-      else if (n <= 2) {
-        const by = n === 1 ? "a single point" : "just 2 points";
+      else if (gap <= 2) {
+        const by = gap === 1 ? "a single point" : "just 2 points";
         lines.push(
-          call<BriefLine>(
-            "lead",
+          flavour(
+            "close",
             {
               cheech: [
-                [
-                  l,
-                  " is on top, but ",
-                  s,
-                  ` is close enough to steal their fries, ${pts(n)} back.`,
-                ],
+                [l, " is on top, but ", s, ` is close enough to steal their fries, ${n} back.`],
               ],
               taylor: [
                 [
@@ -354,34 +395,46 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
             },
             [
               [l, " leads ", s, ` by ${by}, so nobody's popping champagne yet.`],
-              [l, " is on top, but ", s, ` is right on their tail, ${pts(n)} back.`],
+              [l, " is on top, but ", s, ` is right on their tail, ${n} back.`],
+              [l, " leads ", s, ` by ${by}.`],
+              [l, " holds 1st, with ", s, ` just ${n} back.`],
+              ["It's tight at the top: ", l, " leads ", s, ` by ${by}.`],
+              [l, ` clings to 1st, ${n} up on `, s, "."],
+              [s, ` sits ${n} behind `, l, " for 1st."],
             ],
           ),
         );
-      } else if (n < 10)
+      } else if (gap < 10)
         lines.push(
-          pick("lead", [
-            [l, " leads ", s, ` by ${pts(n)}.`],
-            [l, ` sits in 1st, ${pts(n)} up on `, s, "."],
+          house<BriefLine>("lead", [
+            [l, " leads ", s, ` by ${n}.`],
+            [l, ` sits in 1st, ${n} up on `, s, "."],
+            [l, ` holds a ${gap}-point lead over `, s, "."],
+            [l, ` stays on top, ${n} ahead of `, s, "."],
+            [s, " trails ", l, ` by ${n}.`],
+            [l, ` is in front by ${n}, with `, s, " next."],
           ]),
         );
       else
         lines.push(
-          call<BriefLine>(
-            "lead",
+          flavour(
+            "far",
             {
               cheech: [
                 [
                   l,
-                  ` is way out in front, ${pts(n)} clear of `,
+                  ` is way out in front, ${n} clear of `,
                   s,
                   ". Save them a seat at the head of the table.",
                 ],
               ],
             },
             [
-              [l, ` is running away with it, ${pts(n)} clear of `, s, "."],
-              [l, ` leads by a country mile: ${pts(n)} over `, s, "."],
+              [l, ` is running away with it, ${n} clear of `, s, "."],
+              [l, ` leads by a country mile: ${n} over `, s, "."],
+              [l, ` has daylight: ${n} ahead of `, s, "."],
+              [l, ` owns a ${gap}-point cushion over `, s, "."],
+              [l, ` sits comfortably on top, ${n} up on `, s, "."],
             ],
           ),
         );
@@ -389,8 +442,8 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
   } else if (leaders.length <= MAX_NAMES) {
     const at = pts(leaders[0]!.pts);
     lines.push(
-      call<BriefLine>(
-        "lead",
+      flavour(
+        "tied",
         {
           taylor: [
             [
@@ -400,8 +453,11 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
           ],
         },
         [
-          [...names(leaders), ` are deadlocked for 1st at ${at}. Grab the popcorn.`],
+          [...names(leaders), ` are deadlocked for 1st at ${at}.`],
           ["Logjam at the top: ", ...names(leaders), ` are tied at ${at}.`],
+          [...names(leaders), ` share 1st at ${at}.`],
+          ["It's a tie for 1st: ", ...names(leaders), ` at ${at} each.`],
+          ["Nobody owns 1st outright: ", ...names(leaders), ` are level at ${at}.`],
         ],
       ),
     );
@@ -422,12 +478,23 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
     const t = { team: climb.t.name };
     const how = `${plural(climb.by, "spot")} to ${place(climb.t.rank)}`;
     lines.push(
-      call<BriefLine>(
+      flavour(
         "climb",
-        { cheech: [[t, ` is on a roll, up ${how}.`]], shorty: [[t, ` is flying, up ${how}.`]] },
+        {
+          cheech: [[t, ` is on a roll, up ${how}.`]],
+          shorty: [[t, ` is flying, up ${how}.`]],
+          tommy: [[t, ` climbs ${how}, and I love it.`]],
+        },
         [
           [t, ` is on the move, up ${how}.`],
           ["Big jump for ", t, `: up ${how}.`],
+          [t, ` climbs ${how}.`],
+          [t, ` jumps ${how}.`],
+          [t, ` moves up ${how}.`],
+          [t, ` rises ${how}.`],
+          ["The biggest climb belongs to ", t, `, up ${how}.`],
+          [t, ` makes a move, up ${how}.`],
+          ["Going up: ", t, `, ${how}.`],
         ],
       ),
     );
@@ -436,29 +503,40 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
     const t = { team: slide.t.name };
     const how = `${plural(-slide.by, "spot")} to ${place(slide.t.rank)}`;
     lines.push(
-      call<BriefLine>(
+      flavour(
         "slide",
         {
           cheech: [
             [t, ` slipped ${how}, but the cup is half full: there's plenty of hockey left.`],
           ],
           robson: [["Tough sledding for ", t, `, down ${how}.`]],
+          tommy: [[t, ` slid ${how}. Not good enough!`]],
         },
         [
           ["Rough night for ", t, `, down ${how}.`],
           [t, ` slipped ${how}.`],
+          [t, ` drops ${how}.`],
+          [t, ` falls ${how}.`],
+          ["Tough night for ", t, `, down ${how}.`],
+          [t, ` slides ${how}.`],
+          ["The biggest drop: ", t, `, down ${how}.`],
+          [t, ` gives back ground, down ${how}.`],
         ],
       ),
     );
   }
 
-  // The booth's own segment: Cheech keeps an eye on the injury ward, Don Taylor on the week's
-  // hottest team, each falling back on the other's when there's nothing to say
+  // The booth's own segment: Garrett keeps an eye on the injury ward, Taylor on the week's
+  // hottest team, Larscheid on the coldest, each falling back on another when there's nothing to
+  // say
   const ward = teams
     .map((t) => ({ t, out: t.roster.filter((p) => isOut(p.injury)).length }))
     .filter((x) => x.out >= 2)
     .sort((a, b) => b.out - a.out || a.t.rank - b.t.rank)[0];
-  const hottest = [...teams].sort((a, b) => b.last7 - a.last7 || a.rank - b.rank)[0];
+  const byWeek = [...teams].sort((a, b) => b.last7 - a.last7 || a.rank - b.rank);
+  const hottest = byWeek[0];
+  const coldest = byWeek[byWeek.length - 1];
+  const alone = (t: Team) => teams.filter((x) => x.last7 === t.last7).length === 1;
   // The week's hottest team, when that isn't the leader or last night's winner (both named
   // already) and it's clear of the rest
   const hot =
@@ -466,53 +544,97 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
     hottest.last7 >= 5 &&
     hottest.rank !== 1 &&
     !winners.includes(hottest) &&
-    teams.filter((t) => t.last7 === hottest.last7).length === 1
+    alone(hottest)
       ? hottest
       : undefined;
-  const wardLine = (): BriefLine | null =>
-    ward
-      ? booth === "cheech"
-        ? [
-            "The injury ward for ",
-            { team: ward.t.name },
-            ` is fuller than a buffet line: ${ward.out} players out.`,
-          ]
-        : ["Get well soon to ", { team: ward.t.name }, `, with ${ward.out} players out.`]
-      : null;
+  // The week's coldest, when it's on its own and has half the points of the pool's middle team
+  // or fewer (a 15-point week isn't cold when everyone else had 25)
+  const middle = byWeek[Math.floor(byWeek.length / 2)]?.last7 ?? 0;
+  const cold =
+    coldest && middle >= 6 && coldest.last7 * 2 <= middle && alone(coldest) ? coldest : undefined;
+  const wardLine = (): BriefLine | null => {
+    if (!ward) return null;
+    const t = { team: ward.t.name };
+    const n = ward.out;
+    return booth === "cheech"
+      ? freshFromBooth("ward", [
+          ["The injury ward for ", t, ` is fuller than a buffet line: ${n} players out.`],
+          ["Get the soup on for ", t, `: ${n} players out.`],
+          ["Chicken soup all round for ", t, `, with ${n} players out.`],
+        ])
+      : house<BriefLine>("ward", [
+          ["Get well soon to ", t, `, with ${n} players out.`],
+          [t, ` is playing short with ${n} players out.`],
+          ["The infirmary is busy for ", t, `: ${n} players out.`],
+        ]);
+  };
   const hotLine = (): BriefLine | null =>
     hot
-      ? [
-          "Hottest team in the pool this week: ",
-          { team: hot.name },
-          `, ${pts(hot.last7)} over the last 7 days.`,
-        ]
+      ? house<BriefLine>("hot", [
+          [
+            "Hottest team in the pool this week: ",
+            { team: hot.name },
+            `, ${pts(hot.last7)} over the last 7 days.`,
+          ],
+          [
+            { team: hot.name },
+            ` has been on fire: ${pts(hot.last7)} in the last 7 days, best in the pool.`,
+          ],
+          [
+            "Nobody's been hotter over the last week than ",
+            { team: hot.name },
+            `: ${pts(hot.last7)}.`,
+          ],
+          ["The week's hottest team: ", { team: hot.name }, `, with ${pts(hot.last7)} in 7 days.`],
+        ])
+      : null;
+  const coldLine = (): BriefLine | null =>
+    cold
+      ? freshFromBooth("cold", [
+          ["Wake-up call for ", { team: cold.name }, `: ${pts(cold.last7)} over the last 7 days.`],
+          [
+            "Somebody light a fire under ",
+            { team: cold.name },
+            `: ${pts(cold.last7)} in the last 7 days.`,
+          ],
+          [{ team: cold.name }, ` has gone quiet: ${pts(cold.last7)} in a week. Not good enough!`],
+          ["Effort check for ", { team: cold.name }, `: ${pts(cold.last7)} over the last 7 days.`],
+        ])
       : null;
   const extra =
     booth === "cheech"
       ? (wardLine() ?? hotLine())
       : booth === "taylor"
         ? (hotLine() ?? wardLine())
-        : null;
+        : booth === "tommy"
+          ? (coldLine() ?? hotLine())
+          : null;
   if (extra) lines.push(extra);
 
   // Teams that had players in action and still got nothing
   const shutOut = teams.filter((t) => t.lastNight === 0 && t.roster.some((p) => p.lastNight));
-  if (shutOut.length > MAX_NAMES)
+  if (shutOut.length > MAX_NAMES) {
+    const n = shutOut.length;
     lines.push(
-      call<BriefLine>(
-        "blank",
+      flavour(
+        "blanks",
         {
-          cheech: [[`${shutOut.length} teams went hungry: not a single point between them.`]],
-          taylor: [
-            [`${shutOut.length} teams ran into some scintillating goaltending and came up empty.`],
-          ],
+          cheech: [[`${n} teams went hungry: not a single point between them.`]],
+          taylor: [[`${n} teams ran into some scintillating goaltending and came up empty.`]],
         },
-        [[`${shutOut.length} teams got blanked. The goalies must be sending thank-you cards.`]],
+        [
+          [`${n} teams got blanked.`],
+          [`${n} teams came up empty.`],
+          [`${n} teams went pointless.`],
+          [`No points at all for ${n} teams.`],
+          [`${n} teams were shut out.`],
+          [`It was a quiet night for ${n} teams: no points.`],
+        ],
       ),
     );
-  else if (shutOut.length)
+  } else if (shutOut.length)
     lines.push(
-      call<BriefLine>(
+      flavour(
         "blank",
         {
           cheech: [
@@ -526,75 +648,48 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
           ],
         },
         [
-          [...names(shutOut), " came up empty. Shake it off, there's always tomorrow."],
-          ["Nothing doing for ", ...names(shutOut), ". The goalies send their regards."],
-          [...names(shutOut), " got blanked. Somebody check the Zamboni for their scoring touch."],
+          [...names(shutOut), " came up empty."],
+          ["Nothing doing for ", ...names(shutOut), "."],
+          [...names(shutOut), " got blanked."],
+          [...names(shutOut), " were shut out."],
+          [...names(shutOut), " went pointless."],
+          ["No points for ", ...names(shutOut), "."],
+          ["Zeroes across the board for ", ...names(shutOut), "."],
+          [...names(shutOut), " had players dress and nothing to show for it."],
         ],
       ),
     );
 
-  // A big night gets a shout: a hat trick from someone named above, or a new leader. Jim Robson
-  // calls the player's name twice, the way he called Greg Adams in 1994, and does it for any
-  // 4-point night too.
+  // A big night gets the booth's shout: a hat trick from someone named above, a new leader, or a
+  // 4-point night
   const hatTrick = mentioned.find((s) => s.lastNight!.g >= 3);
   const bigNight = mentioned.find((s) => nightPts(s) >= 4);
-  const shout =
-    booth === "robson" && (hatTrick ?? bigNight)
-      ? `${(hatTrick ?? bigNight)!.name}! ${(hatTrick ?? bigNight)!.name}!`
-      : hatTrick
-        ? call(
-            "shout",
-            {
-              shorty: ["Lets it go, he scores!", "He scores, and he scores again!"],
-              cheech: [
-                "Somebody order that man a burger!",
-                "Hats on the ice, ketchup on the side!",
-              ],
-              taylor: ["Scintillating!"],
-            },
-            ["Hats on the ice!", "Hat trick alert!", "Throw your caps, folks!"],
-          )
-        : tookOver
-          ? call(
-              "shout",
-              {
-                shorty: ["They've slayed the dragon!"],
-                cheech: ["Order up: a new leader!"],
-                taylor: ["Hold the Sports Page!"],
-              },
-              ["Changing of the guard!", "We have a new leader!", "Stop the presses!"],
-            )
-          : null;
+  // The booth's next shout, or the one after it if that one tells a joke already told today
+  // ("Scintillating!" over a line about scintillating goaltending)
+  const told = [open, ...lines.map(briefText), saying, signoff].join(" ").toLowerCase();
+  const shoutFrom = (key: string, list: Shout[], name: string) => {
+    const said = list
+      .map((_, i) => nth(list, turn + i, `${booth}|${key}`))
+      .map((s) => (typeof s === "string" ? s : s(name)));
+    return (
+      said.find((s) => !MOTIFS.some((m) => s.toLowerCase().includes(m) && told.includes(m))) ??
+      said[0]!
+    );
+  };
+  const shout = hatTrick
+    ? shoutFrom("hatTrick", bank.hatTrick, hatTrick.name)
+    : tookOver
+      ? shoutFrom("newLeader", bank.newLeader, leaders[0]!.name)
+      : bigNight
+        ? shoutFrom("bigNight", bank.bigNight, bigNight.name)
+        : null;
 
-  const open: BriefLine = {
-    shorty: pick<BriefLine>("open", [
-      ["Here's how last night went down."],
-      ["Last night in the pool, from the top."],
-    ]),
-    cheech: pick<BriefLine>("open", [
-      ["Pull up a chair and pass the ketchup: here's last night in the pool."],
-      ["Grab a plate, folks. Here's the night that was."],
-    ]),
-    robson: [
-      "A special hello to the hospital patients and shut-ins. Here's last night in the pool.",
-    ],
-    taylor: pick<BriefLine>("open", [
-      ["Time for the Sports Page."],
-      ["Here's your Sports Page for the pool."],
-    ]),
-  }[booth];
-  const signoff: BriefLine = {
-    shorty: pick<BriefLine>("signoff", [
-      ["That's the call. See you at puck drop."],
-      ["Back at it at puck drop."],
-    ]),
-    cheech: pick<BriefLine>("signoff", [
-      ["That's the meal. Seconds at puck drop."],
-      ["Cup's half full, folks. See you at puck drop."],
-    ]),
-    robson: ["So long for now, and thanks for listening."],
-    taylor: ["And that's it: you're up to date in the world of the WG Hockey Pool."],
-  }[booth];
-
-  return { booth, open, shout, lines, signoff };
+  return {
+    booth,
+    open: [open],
+    shout,
+    lines,
+    saying,
+    signoff: [signoff],
+  };
 }

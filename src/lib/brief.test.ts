@@ -4,6 +4,7 @@ import {
   boothFor,
   briefText,
   nightBrief,
+  nth,
   statLine,
   type Brief,
   type BoothId,
@@ -91,12 +92,15 @@ const boothDays = (s: ReturnType<typeof season>, booth: BoothId) =>
   DATES.filter((d) => boothFor(d) === booth).map((lastDate) => nightBrief({ ...s, lastDate }));
 const lines = (b: Brief) => b.lines.map(briefText);
 const lineWith = (b: Brief, re: RegExp) => lines(b).find((l) => re.test(l));
+// However a booth says a team got nothing
+const BLANK =
+  /empty|blanked|Nothing doing|shut out|pointless|No points|Zeroes|nothing to show|hungry/;
 
 // Reads like finished sentences whichever wording came up
 function expectClean(b: Brief) {
   const all = [b.open, ...b.lines, b.signoff].filter((x) => x != null).map(briefText);
-  for (const t of [b.shout, ...all].filter((x) => x != null)) {
-    expect(t).toMatch(/^[A-Z].*[.!]$/);
+  for (const t of [b.shout, b.saying, ...all].filter((x) => x != null)) {
+    expect(t).toMatch(/^[A-Z].*[.!?]$/);
     expect(t).not.toMatch(/undefined|null|NaN| {2}| [.,:!]|\.\./);
   }
 }
@@ -112,50 +116,96 @@ describe("statLine", () => {
 });
 
 describe("booths", () => {
-  it("hands each game day to the next booth, so no two days in a row sound alike", () => {
-    const booths = DATES.slice(0, 12).map(boothFor);
+  const IDS = Object.keys(BOOTHS) as BoothId[];
+
+  it("hands each game day to the next of five booths, so no two days in a row sound alike", () => {
+    const booths = DATES.slice(0, 15).map(boothFor);
     for (let i = 1; i < booths.length; i++) expect(booths[i]).not.toBe(booths[i - 1]);
-    expect(new Set(booths.slice(0, 4))).toEqual(new Set(["shorty", "cheech", "robson", "taylor"]));
-    expect(BOOTHS.robson.name).toBe("Jim Robson");
+    expect(new Set(booths.slice(0, 5))).toEqual(new Set(IDS));
+    expect(BOOTHS.tommy.name).toBe("Tom Larscheid");
+  });
+
+  it("gives every booth a big book of lines, all of them finished sentences", () => {
+    for (const id of IDS) {
+      const b = BOOTHS[id];
+      expect(b.sayings.length).toBeGreaterThanOrEqual(40);
+      expect(b.open.length).toBeGreaterThanOrEqual(16);
+      expect(b.signoff.length).toBeGreaterThanOrEqual(16);
+      for (const list of [b.hatTrick, b.newLeader, b.bigNight])
+        expect(list.length).toBeGreaterThanOrEqual(6);
+      const all = [
+        ...b.open,
+        ...b.signoff,
+        ...b.sayings,
+        ...b.hatTrick,
+        ...b.newLeader,
+        ...b.bigNight,
+      ];
+      for (const line of all) {
+        const t = typeof line === "string" ? line : line("Al Aardvark");
+        expect(t).toMatch(/^[A-Z].*[.!?]$/);
+        expect(t).not.toMatch(/ {2}| [.,:!]|\.\./);
+      }
+      // No line twice in a booth's book
+      for (const list of [b.open, b.signoff, b.sayings])
+        expect(new Set(list).size).toBe(list.length);
+    }
+  });
+
+  it("goes through a whole list before anything comes back", () => {
+    for (const n of [1, 5, 12, 16, 17, 40, 41]) {
+      const list = Array.from({ length: n }, (_, i) => i);
+      for (const start of [0, 7, 1000]) {
+        const seen = new Set(list.map((_, k) => nth(list, start + k, `key${n}`)));
+        expect(seen.size).toBe(n);
+      }
+    }
   });
 
   const s = () =>
     season({ 1: [game(D1, "EDM", 1, 1)], 2: [game(D1, "TOR", 1, 0)], 4: [game(D1, "NYR", 0, 0)] });
 
-  it("opens and signs off in each booth's own voice", () => {
-    for (const b of everyWay(s())) {
-      expectClean(b);
-      expect(b.booth).not.toBeNull();
-      expect(b.open).not.toBeNull();
-      expect(b.signoff).not.toBeNull();
+  it("doesn't repeat a booth's saying, opening or sign-off for a whole season", () => {
+    // 40 calls a booth is 200 game days with five booths taking turns
+    const days = Array.from({ length: 200 }, (_, i) => addDays(D1, i));
+    for (const id of IDS) {
+      const briefs = days
+        .filter((d) => boothFor(d) === id)
+        .map((lastDate) => nightBrief({ ...s(), lastDate }));
+      expect(briefs).toHaveLength(40);
+      expect(new Set(briefs.map((b) => b.saying)).size).toBe(40);
+      expect(new Set(briefs.slice(0, 16).map((b) => briefText(b.open!))).size).toBe(16);
+      expect(new Set(briefs.slice(0, 16).map((b) => briefText(b.signoff!))).size).toBe(16);
+      for (const b of briefs) {
+        expectClean(b);
+        expect(b.booth).toBe(id);
+      }
     }
-    for (const b of boothDays(s(), "robson"))
-      expect(briefText(b.open!)).toMatch(
-        /^A special hello to the hospital patients and shut-ins\./,
-      );
-    for (const b of boothDays(s(), "taylor"))
-      expect(briefText(b.signoff!)).toBe(
-        "And that's it: you're up to date in the world of the WG Hockey Pool.",
-      );
   });
 
-  it("says each booth's lines some days and the house lines on others", () => {
-    const all = (booth: BoothId) =>
-      boothDays(s(), booth)
-        .map((b) => [b.open, ...b.lines, b.signoff].map((l) => briefText(l!)).join(" "))
-        .join(" ");
-    expect(all("cheech")).toMatch(/ketchup|plate|meal/);
-    expect(all("taylor")).toMatch(/Sports Page/);
-    expect(all("shorty")).toMatch(/lets it go, he scores!/);
+  it("says a booth's own lines for the night now and then, not every time", () => {
+    const shorty = boothDays(s(), "shorty").map((b) => briefText(b.lines[0]!));
+    const own = shorty.filter((l) => /lets it go, he scores!/.test(l)).length;
+    expect(own).toBeGreaterThan(0);
+    expect(own).toBeLessThan(shorty.length);
+    expect(
+      boothDays(s(), "robson").some((b) =>
+        /hospital patients and shut-ins/.test(briefText(b.open!)),
+      ),
+    ).toBe(true);
+    expect(boothDays(s(), "taylor").some((b) => /up to date/.test(briefText(b.signoff!)))).toBe(
+      true,
+    );
   });
 
-  it("has Jim Robson call a big night's name twice", () => {
+  it("shouts on a big night in each booth's voice, Robson's name twice among them", () => {
     const big = season({ 1: [game(D1, "EDM", 2, 2)], 2: [game(D1, "TOR", 1, 0)] });
-    for (const b of boothDays(big, "robson")) expect(b.shout).toBe("Al Aardvark! Al Aardvark!");
-    // A hat trick gets it too; the other booths shout their own way
+    const robson = boothDays(big, "robson").map((b) => b.shout);
+    expect(robson).toContain("Al Aardvark! Al Aardvark!");
+    for (const id of IDS) for (const b of boothDays(big, id)) expect(b.shout).toMatch(/!$/);
+    // A hat trick too
     const hat = season({ 1: [game(D1, "EDM", 3, 0)], 2: [game(D1, "TOR", 1, 0)] });
-    for (const b of boothDays(hat, "robson")) expect(b.shout).toBe("Al Aardvark! Al Aardvark!");
-    for (const b of boothDays(hat, "shorty")) expect(b.shout).toMatch(/!$/);
+    for (const b of everyWay(hat)) expect(b.shout).toMatch(/!$/);
   });
 
   it("has Jim Robson tip his cap to a day-to-day player who played anyway", () => {
@@ -181,15 +231,16 @@ describe("booths", () => {
     for (const booth of ["shorty", "robson"] as const)
       for (const b of boothDays(season(logs), booth)) {
         expectClean(b);
-        expect(lineWith(b, /^Three stars/)).toBe(
-          "Three stars: number three, Cy Cougar, an assist; number two, Bo Beaver, a goal and an assist; and the first star, Al Aardvark, a hat trick and an assist.",
-        );
+        const stars = lineWith(b, /three stars/i);
+        expect(stars).toMatch(/Al Aardvark/);
+        expect(stars).toMatch(/Bo Beaver/);
+        expect(stars).toMatch(/Cy Cougar/);
       }
     for (const b of boothDays(season(logs), "cheech"))
-      expect(lineWith(b, /^Three stars/)).toBeUndefined();
+      expect(lineWith(b, /three stars/i)).toBeUndefined();
   });
 
-  it("has Cheech check the injury ward, and Don Taylor the week's hottest team", () => {
+  it("has Garrett check the injury ward, Taylor the week's hottest team, Larscheid the coldest", () => {
     // Dogs have both their players out; Bees have the week's best 7 days without leading
     const logs = {
       1: [game(D1, "EDM", 6, 4)],
@@ -200,25 +251,40 @@ describe("booths", () => {
     const s = season(logs, report);
     for (const b of boothDays(s, "cheech")) {
       expectClean(b);
-      expect(lineWith(b, /injury ward/)).toBe(
-        "The injury ward for Dogs is fuller than a buffet line: 2 players out.",
-      );
+      expect(lineWith(b, /2 players out/)).toMatch(/Dogs/);
     }
     for (const b of boothDays(s, "taylor")) {
       expectClean(b);
-      expect(lineWith(b, /Hottest team/)).toBe(
-        "Hottest team in the pool this week: Bees, 6 points over the last 7 days.",
-      );
+      expect(lineWith(b, /6 points/)).toMatch(/Bees/);
     }
-    // Without anyone hurt, Cheech names the hottest team instead
+    // Without anyone hurt, Garrett names the hottest team instead
     for (const b of boothDays(season(logs), "cheech"))
-      expect(lineWith(b, /Hottest team/)).toMatch(/Bees/);
+      expect(lineWith(b, /6 points/)).toMatch(/Bees/);
+    // The coldest team, when one has half the points of the pool's middle team or fewer: Aces led
+    // but had nothing in the last 7 days, while everyone else had 6
+    const cold = season({
+      1: [game(D1, "EDM", 6, 4)],
+      2: [game(addDays(D1, 8), "TOR", 3, 3)],
+      3: [game(addDays(D1, 9), "VAN", 3, 3)],
+      4: [game(addDays(D1, 10), "NYR", 3, 3)],
+    });
+    for (const b of boothDays(cold, "tommy")) {
+      expectClean(b);
+      expect(lineWith(b, /0 points (over|in) the last 7 days|0 points in a week/)).toMatch(/Aces/);
+    }
   });
 });
 
 describe("nightBrief", () => {
   it("says nothing when no pool player scored", () => {
-    const nothing = { booth: null, open: null, shout: null, lines: [], signoff: null };
+    const nothing = {
+      booth: null,
+      open: null,
+      shout: null,
+      lines: [],
+      saying: null,
+      signoff: null,
+    };
     expect(nightBrief(season({}))).toEqual(nothing);
     expect(nightBrief(season({ 1: [game(D1, "EDM", 0, 0)] }))).toEqual(nothing);
   });
@@ -245,10 +311,11 @@ describe("nightBrief", () => {
       expect(win).toMatch(/Aces/);
       expect(win).toMatch(/a hat trick and 2 assists/);
       expect(win).toMatch(/5 points/);
-      const lead = lines(b).find((l, i) => i > 0 && /^Aces /.test(l));
+      // However it's put: "Aces leads Bees…", "Bees sits 2 points behind Aces…"
+      const lead = lines(b).find((l, i) => i > 0 && /Aces/.test(l) && /Bees/.test(l));
       expect(lead).toMatch(/Bees/);
       expect(lead).toMatch(/2 points/);
-      const blank = lineWith(b, /empty|blanked|Nothing doing/);
+      const blank = lineWith(b, BLANK);
       expect(blank).toMatch(/Dogs/);
       expect(blank).not.toMatch(/Cats/); // nobody on Cats played
     }
@@ -278,15 +345,14 @@ describe("nightBrief", () => {
       shouts.add(b.shout!);
       const [win] = lines(b);
       expect(win).toMatch(/Aces.*4 points|Al Aardvark.*Aces/);
-      expect(win).toMatch(/Al Aardvark.*a goal and an assist/);
+      expect(win).toMatch(/Al Aardvark/);
+      expect(win).toMatch(/a goal and an assist/);
       // Di Dingo's 3 points: the best line, or the first of three stars
-      expect(lineWith(b, /Di Dingo/)).toMatch(
-        /Di Dingo.*2 goals and an assist|first star, Di Dingo, 2 goals and an assist/,
-      );
-      expect(lines(b)).toContain("Aces climbs into 1st, 3 points clear of the pack.");
-      expect(lineWith(b, /Dogs .*up 2 spots|for Dogs: up 2 spots/)).toMatch(/up 2 spots to T-2nd/);
+      expect(lineWith(b, /Di Dingo/)).toBeDefined();
+      expect(lineWith(b, /of the pack/)).toMatch(/^Aces .*3 points (clear|ahead) of the pack\.$/);
+      expect(lineWith(b, /2 spots to T-2nd/)).toMatch(/Dogs/);
       expect(lineWith(b, /1 spot to T-2nd/)).toMatch(/Bees/);
-      expect(lineWith(b, /empty|blanked|Nothing doing/)).toMatch(/Bees/);
+      expect(lineWith(b, BLANK)).toMatch(/Bees/);
     }
     // A new leader gets a shout every day, Shorthouse's dragon among them
     expect(shouts).toContain("They've slayed the dragon!");
@@ -297,7 +363,7 @@ describe("nightBrief", () => {
     const s = season({ 2: [game(D1, "TOR", 1, 0)], 1: [game(D2, "EDM", 2, 0)] });
     for (const b of everyWay(s)) {
       expectClean(b);
-      expect(lines(b)[1]).toMatch(/^Aces (climbs into|grabs the top spot).* 1 point .*Bees\.$/);
+      expect(lines(b)[1]).toMatch(/^Aces .* 1 point .*Bees\.$/);
     }
   });
 
@@ -314,8 +380,11 @@ describe("nightBrief", () => {
       expect(b.shout).toBeNull();
       const [win, lead, ...rest] = lines(b);
       expect(rest).toEqual([]);
-      expect(win).toMatch(/Aces and Bees .*2 points (apiece|each)/);
-      expect(lead).toMatch(/Aces and Bees are (deadlocked for 1st|tied|tied for 1st) at 2 points/);
+      expect(win).toMatch(/Aces and Bees/);
+      expect(win).toMatch(/2 points/);
+      expect(lead).toMatch(/Aces and Bees/);
+      expect(lead).toMatch(/1st|the top/);
+      expect(lead).toMatch(/2 points/);
     }
   });
 
@@ -328,7 +397,8 @@ describe("nightBrief", () => {
     });
     for (const b of everyWay(s)) {
       expectClean(b);
-      expect(lines(b)[0]).toMatch(/Aces, Bees, Cats and Dogs .*1 point/);
+      expect(lines(b)[0]).toMatch(/Aces, Bees, Cats and Dogs/);
+      expect(lines(b)[0]).toMatch(/1 point/);
     }
   });
 });

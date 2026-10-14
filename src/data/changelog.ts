@@ -13,6 +13,25 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.0",
+    date: "2026-10-14",
+    title: "A recap that doesn't repeat itself",
+    changes: [
+      {
+        kind: "new",
+        text: "Tom Larscheid joins the booth, so the recap now rotates through five Vancouver voices: John Shorthouse, John Garrett, Jim Robson, Don Taylor and Tommy.",
+      },
+      {
+        kind: "improved",
+        text: "Each booth has 40 sayings, 16 ways to open and 17 to sign off, and the recap goes through every one before any comes back: a booth's sayings last the whole season. The rest of the recap has far more ways to say each thing too.",
+      },
+      {
+        kind: "improved",
+        text: "A recap no longer tells the same joke twice in one morning.",
+      },
+    ],
+  },
+  {
     version: "1.6.0",
     date: "2026-10-08",
     title: "The recap gets a broadcast booth",

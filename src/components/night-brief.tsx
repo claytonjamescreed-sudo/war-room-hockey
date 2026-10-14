@@ -26,13 +26,13 @@ function Line({ line }: { line: BriefLine }) {
 }
 
 // An announcer-style rundown of the last synced game day, above the standings, called from a
-// different Vancouver booth each game day (see brief.ts)
+// different Vancouver booth each game day (see brief.ts and src/data/booths.ts)
 export function NightBrief({
   data,
 }: {
   data: Pick<SeasonData, "teams" | "lastNight" | "lastDate">;
 }) {
-  const { booth, open, shout, lines, signoff } = nightBrief(data);
+  const { booth, open, shout, lines, saying, signoff } = nightBrief(data);
   if (!lines.length) return null;
   return (
     <section className="mb-8 rounded-md border bg-card" aria-labelledby="recap-h">
@@ -55,6 +55,7 @@ export function NightBrief({
             <Line line={line} />
           </span>
         ))}
+        {saying && <> {saying}</>}
         {signoff && (
           <span className="italic text-muted-foreground">
             {" "}
@@ -64,7 +65,7 @@ export function NightBrief({
       </p>
       {booth && (
         <p className="px-4 pb-3 pt-1 text-sm text-muted-foreground">
-          In the booth today: a tip of the cap to {BOOTHS[booth].name}.
+          Called in the spirit of {BOOTHS[booth].name}.
         </p>
       )}
     </section>

@@ -5,6 +5,7 @@ import {
   briefText,
   nightBrief,
   nth,
+  aPointLead,
   statLine,
   type Brief,
   type BoothId,
@@ -104,6 +105,18 @@ function expectClean(b: Brief) {
     expect(t).not.toMatch(/undefined|null|NaN| {2}| [.,:!]|\.\./);
   }
 }
+
+describe("aPointLead", () => {
+  it("puts an before the numbers that start with a vowel sound", () => {
+    expect(aPointLead(5)).toBe("a 5-point lead");
+    expect(aPointLead(8)).toBe("an 8-point lead");
+    expect(aPointLead(11)).toBe("an 11-point lead");
+    expect(aPointLead(18)).toBe("an 18-point lead");
+    expect(aPointLead(28)).toBe("a 28-point lead");
+    expect(aPointLead(83)).toBe("an 83-point lead");
+    expect(aPointLead(110)).toBe("a 110-point lead");
+  });
+});
 
 describe("statLine", () => {
   it("says a night the way an announcer would", () => {

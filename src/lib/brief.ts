@@ -76,6 +76,10 @@ function names(teams: Team[]): BriefPart[] {
 // Groups this big read better as a count than a list of names
 const MAX_NAMES = 4;
 
+// "a 5-point lead", "an 8-point lead", "an 11-point lead", "an 80-point lead"
+export const aPointLead = (n: number) =>
+  `${n === 8 || n === 11 || n === 18 || (n >= 80 && n <= 89) || (n >= 800 && n <= 899) ? "an" : "a"} ${n}-point lead`;
+
 // A booth's running jokes: one recap tells each at most once
 const MOTIFS = [
   "moustache",
@@ -340,7 +344,9 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
     );
   }
 
-  // The lead
+  // The lead after last night. The standings lines are told as last night's result ("climbed to
+  // 3rd", "led by 4"): the standings below move with tonight's games, and keep last night's
+  // points overnight until the morning update, so the recap mustn't read as where things stand now.
   const leaders = teams.filter((t) => t.rank === 1);
   const tookOver = leaders.length === 1 && leaders[0]!.prevRank != null && leaders[0]!.prevRank > 1;
   if (leaders.length === 1) {
@@ -355,24 +361,24 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
         lines.push(
           tookOver
             ? house<BriefLine>("over-pack", [
-                [l, ` climbs into 1st, ${n} clear of the pack.`],
-                [l, ` takes over 1st, ${n} clear of the pack.`],
-                [l, ` moves to the top, ${n} ahead of the pack.`],
+                [l, ` climbed into 1st, ${n} clear of the pack.`],
+                [l, ` took over 1st, ${n} clear of the pack.`],
+                [l, ` moved to the top, ${n} ahead of the pack.`],
               ])
             : house<BriefLine>("pack", [
-                [l, ` leads the pack by ${n}.`],
-                [l, ` is ${n} clear of a crowd in 2nd.`],
-                [l, ` holds 1st, ${n} up on a logjam behind.`],
+                [l, ` led the pack by ${n}.`],
+                [l, ` finished the night ${n} clear of a crowd in 2nd.`],
+                [l, ` held 1st, ${n} up on a logjam behind.`],
               ]),
         );
       else if (tookOver)
         lines.push(
           house<BriefLine>("over", [
-            [l, ` climbs into 1st, ${n} ahead of `, s, "."],
-            [l, ` grabs the top spot, ${n} clear of `, s, "."],
-            [l, ` takes over 1st, ${n} up on `, s, "."],
-            [l, ` moves into 1st, ${n} ahead of `, s, "."],
-            [l, ` is the new leader, ${n} clear of `, s, "."],
+            [l, ` climbed into 1st, ${n} ahead of `, s, "."],
+            [l, ` grabbed the top spot, ${n} clear of `, s, "."],
+            [l, ` took over 1st, ${n} up on `, s, "."],
+            [l, ` moved into 1st, ${n} ahead of `, s, "."],
+            [l, ` became the new leader, ${n} clear of `, s, "."],
           ]),
         );
       else if (gap <= 2) {
@@ -382,37 +388,42 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
             "close",
             {
               cheech: [
-                [l, " is on top, but ", s, ` is close enough to steal their fries, ${n} back.`],
+                [
+                  l,
+                  " ended the night on top, but ",
+                  s,
+                  ` got close enough to steal their fries, ${n} back.`,
+                ],
               ],
               taylor: [
                 [
                   l,
-                  " leads ",
+                  ` finished ${by} up on `,
                   s,
-                  ` by ${by}. Too close to call, so we'll let Jim Van Horne's moustache decide.`,
+                  ". Too close to call, so we'll let Jim Van Horne's moustache decide.",
                 ],
               ],
             },
             [
-              [l, " leads ", s, ` by ${by}, so nobody's popping champagne yet.`],
-              [l, " is on top, but ", s, ` is right on their tail, ${n} back.`],
-              [l, " leads ", s, ` by ${by}.`],
-              [l, " holds 1st, with ", s, ` just ${n} back.`],
-              ["It's tight at the top: ", l, " leads ", s, ` by ${by}.`],
-              [l, ` clings to 1st, ${n} up on `, s, "."],
-              [s, ` sits ${n} behind `, l, " for 1st."],
+              [l, ` held 1st by ${by} over `, s, ", so nobody's popping champagne yet."],
+              [l, " ended the night on top, but ", s, ` was right on their tail, ${n} back.`],
+              [l, " led ", s, ` by ${by}.`],
+              [l, " held 1st, with ", s, ` just ${n} back.`],
+              ["It was tight at the top: ", l, " led ", s, ` by ${by}.`],
+              [l, ` clung to 1st, ${n} up on `, s, "."],
+              [s, ` finished ${n} behind `, l, " for 1st."],
             ],
           ),
         );
       } else if (gap < 10)
         lines.push(
           house<BriefLine>("lead", [
-            [l, " leads ", s, ` by ${n}.`],
-            [l, ` sits in 1st, ${n} up on `, s, "."],
-            [l, ` holds a ${gap}-point lead over `, s, "."],
-            [l, ` stays on top, ${n} ahead of `, s, "."],
-            [s, " trails ", l, ` by ${n}.`],
-            [l, ` is in front by ${n}, with `, s, " next."],
+            [l, " led ", s, ` by ${n}.`],
+            [l, ` finished the night in 1st, ${n} up on `, s, "."],
+            [l, ` held ${aPointLead(gap)} lead over `, s, "."],
+            [l, ` ended the night on top, ${n} ahead of `, s, "."],
+            [s, " trailed ", l, ` by ${n}.`],
+            [l, ` was in front by ${n}, with `, s, " next."],
           ]),
         );
       else
@@ -423,18 +434,18 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
               cheech: [
                 [
                   l,
-                  ` is way out in front, ${n} clear of `,
+                  ` ended the night way out in front, ${n} clear of `,
                   s,
                   ". Save them a seat at the head of the table.",
                 ],
               ],
             },
             [
-              [l, ` is running away with it, ${n} clear of `, s, "."],
-              [l, ` leads by a country mile: ${n} over `, s, "."],
-              [l, ` has daylight: ${n} ahead of `, s, "."],
-              [l, ` owns a ${gap}-point cushion over `, s, "."],
-              [l, ` sits comfortably on top, ${n} up on `, s, "."],
+              [l, ` was running away with it, ${n} clear of `, s, "."],
+              [l, ` led by a country mile: ${n} over `, s, "."],
+              [l, ` had daylight: ${n} ahead of `, s, "."],
+              [l, ` owned ${aPointLead(gap).replace("lead", "cushion")} over `, s, "."],
+              [l, ` sat comfortably on top, ${n} up on `, s, "."],
             ],
           ),
         );
@@ -448,21 +459,21 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
           taylor: [
             [
               ...names(leaders),
-              ` are tied for 1st at ${at}. We'll let Jim Van Horne's moustache sort it out.`,
+              ` finished tied for 1st at ${at}. We'll let Jim Van Horne's moustache sort it out.`,
             ],
           ],
         },
         [
-          [...names(leaders), ` are deadlocked for 1st at ${at}.`],
-          ["Logjam at the top: ", ...names(leaders), ` are tied at ${at}.`],
-          [...names(leaders), ` share 1st at ${at}.`],
-          ["It's a tie for 1st: ", ...names(leaders), ` at ${at} each.`],
-          ["Nobody owns 1st outright: ", ...names(leaders), ` are level at ${at}.`],
+          [...names(leaders), ` finished the night deadlocked for 1st at ${at}.`],
+          ["Logjam at the top: ", ...names(leaders), ` were tied at ${at}.`],
+          [...names(leaders), ` shared 1st at ${at}.`],
+          ["It was a tie for 1st: ", ...names(leaders), ` at ${at} each.`],
+          ["Nobody owned 1st outright: ", ...names(leaders), ` were level at ${at}.`],
         ],
       ),
     );
   } else {
-    lines.push([`${leaders.length} teams share 1st at ${pts(leaders[0]!.pts)}. Anybody's pool.`]);
+    lines.push([`${leaders.length} teams shared 1st at ${pts(leaders[0]!.pts)}. Anybody's pool.`]);
   }
 
   // Biggest climb and biggest slide since the game day before (none after the first game day).
@@ -481,19 +492,19 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
       flavour(
         "climb",
         {
-          cheech: [[t, ` is on a roll, up ${how}.`]],
-          shorty: [[t, ` is flying, up ${how}.`]],
-          tommy: [[t, ` climbs ${how}, and I love it.`]],
+          cheech: [[t, ` got on a roll, up ${how}.`]],
+          shorty: [[t, ` was flying, up ${how}.`]],
+          tommy: [[t, ` climbed ${how}, and I love it.`]],
         },
         [
-          [t, ` is on the move, up ${how}.`],
+          [t, ` was on the move, up ${how}.`],
           ["Big jump for ", t, `: up ${how}.`],
-          [t, ` climbs ${how}.`],
-          [t, ` jumps ${how}.`],
-          [t, ` moves up ${how}.`],
-          [t, ` rises ${how}.`],
-          ["The biggest climb belongs to ", t, `, up ${how}.`],
-          [t, ` makes a move, up ${how}.`],
+          [t, ` climbed ${how}.`],
+          [t, ` jumped ${how}.`],
+          [t, ` moved up ${how}.`],
+          [t, ` rose ${how}.`],
+          ["The biggest climb belonged to ", t, `, up ${how}.`],
+          [t, ` made a move, up ${how}.`],
           ["Going up: ", t, `, ${how}.`],
         ],
       ),
@@ -515,12 +526,12 @@ export function nightBrief(data: Pick<SeasonData, "teams" | "lastNight" | "lastD
         [
           ["Rough night for ", t, `, down ${how}.`],
           [t, ` slipped ${how}.`],
-          [t, ` drops ${how}.`],
-          [t, ` falls ${how}.`],
+          [t, ` dropped ${how}.`],
+          [t, ` fell ${how}.`],
           ["Tough night for ", t, `, down ${how}.`],
-          [t, ` slides ${how}.`],
+          [t, ` slid ${how}.`],
           ["The biggest drop: ", t, `, down ${how}.`],
-          [t, ` gives back ground, down ${how}.`],
+          [t, ` gave back ground, down ${how}.`],
         ],
       ),
     );

@@ -13,6 +13,25 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.8.0",
+    date: "2026-10-15",
+    title: "Last night for every player",
+    changes: [
+      {
+        kind: "new",
+        text: "Each team's player list has a Last night column: every player's points from the last game day, in the standings and the team lockers.",
+      },
+      {
+        kind: "fixed",
+        text: 'The recap now tells the standings as last night\'s result ("climbed to 3rd", "led by 4"). It used to read as where teams stand now, which didn\'t match the standings while tonight\'s games moved them, or overnight before the morning update.',
+      },
+      {
+        kind: "fixed",
+        text: '"An 11-point cushion", not "a 11-point cushion".',
+      },
+    ],
+  },
+  {
     version: "1.7.0",
     date: "2026-10-14",
     title: "A recap that doesn't repeat itself",

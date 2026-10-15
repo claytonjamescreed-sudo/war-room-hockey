@@ -156,6 +156,12 @@ export function TeamRoster({
             <th className="px-2 py-2 sm:px-3 text-right">G</th>
             <th className="px-2 py-2 sm:px-3 text-right">A</th>
             <th className="px-2 py-2 sm:px-3 text-right">P</th>
+            <th
+              className="px-2 py-2 text-right leading-tight sm:px-3"
+              title="Points in the last game day's games"
+            >
+              Last night
+            </th>
             <th className="hidden px-2 py-2 text-right md:table-cell md:px-3">PPG</th>
             <th
               className="hidden px-2 py-2 text-right md:table-cell md:px-3"
@@ -171,6 +177,7 @@ export function TeamRoster({
         <tbody>
           {rows.map(({ p, l, round, left }) => {
             const tonightPts = l.tonight ? l.tonight.g + l.tonight.a : 0;
+            const lastNight = p.lastNight ? p.lastNight.g + p.lastNight.a : 0;
             return (
               <tr key={p.id} className="border-t">
                 <td className="px-2 py-2 sm:px-3">
@@ -203,6 +210,16 @@ export function TeamRoster({
                       +{tonightPts}
                     </span>
                   )}
+                </td>
+                <td
+                  className="num px-2 py-2 text-right text-lg sm:px-3"
+                  title={
+                    p.lastNight
+                      ? `${p.lastNight.g}G ${p.lastNight.a}A ${p.lastNight.home ? "vs" : "@"} ${p.lastNight.opp}`
+                      : "Didn't play"
+                  }
+                >
+                  {lastNight || <span className="text-muted-foreground">–</span>}
                 </td>
                 <td className="num hidden px-2 py-2 text-right text-lg md:table-cell md:px-3">
                   {perGame(l.finalPts, l.gp)}

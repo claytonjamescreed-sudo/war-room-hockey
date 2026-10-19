@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.10.3",
+    date: "2026-10-19",
+    title: "A taller race on computers too",
+    changes: [
+      {
+        kind: "improved",
+        text: "The Race chart is taller on tablets and computers as well, so the lines spread out and are easier to follow.",
+      },
+    ],
+  },
+  {
     version: "1.10.2",
     date: "2026-10-19",
     title: "A taller race on phones",

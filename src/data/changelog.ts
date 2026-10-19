@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.10.0",
+    date: "2026-10-19",
+    title: "Points back on the race",
+    changes: [
+      {
+        kind: "new",
+        text: "The Race has a Points back view: how far every team was behind the leader on each game day, with the leader along the top.",
+      },
+    ],
+  },
+  {
     version: "1.9.0",
     date: "2026-10-19",
     title: "The race, by place",

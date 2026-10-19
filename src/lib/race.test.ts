@@ -28,6 +28,14 @@ describe("racePlaces", () => {
     expect(days[2]!.places[1]!.pts).toBe(9);
   });
 
+  it("knows how far each team was behind that day's leader", () => {
+    expect(days.map((d) => [1, 2, 3, 4].map((s) => d.places[s]!.back))).toEqual([
+      [2, 0, 2, 5],
+      [2, 0, 0, 5],
+      [0, 3, 3, 1],
+    ]);
+  });
+
   it("draws teams on the same points one below the other, keeping the day before's order", () => {
     // Day 1: Aces and Cats tied, by name; day 2: Bees and Cats tied, Bees was ahead; day 3: Bees
     // and Cats still tied, still in that order

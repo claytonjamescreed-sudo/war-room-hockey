@@ -6,7 +6,8 @@
 // gets an order with no ties: by points, then the order the day before (so tied lines don't swap
 // back and forth), and on the first day by name.
 
-export type RacePlace = { rank: number; order: number; pts: number };
+// back: points behind that day's leader
+export type RacePlace = { rank: number; order: number; pts: number; back: number };
 export type RaceDay = { date: string; places: Record<number, RacePlace> };
 
 export function racePlaces(
@@ -22,12 +23,14 @@ export function racePlaces(
     const order = [...slots].sort(
       (a, b) => pts(b) - pts(a) || before.indexOf(a) - before.indexOf(b),
     );
+    const leader = Math.max(0, ...slots.map(pts));
     const places: Record<number, RacePlace> = {};
     for (const s of slots)
       places[s] = {
         rank: 1 + slots.filter((o) => pts(o) > pts(s)).length,
         order: order.indexOf(s) + 1,
         pts: pts(s),
+        back: leader - pts(s),
       };
     before = order;
     return { date, places };

@@ -43,7 +43,7 @@ export const Route = createFileRoute("/race")({
   component: Race,
 });
 
-type View = "place" | "points";
+type View = "place" | "points" | "back";
 type Row = { date: string; [key: string]: number | string };
 
 // The colours a picked-out team's line takes, in this order (blue, orange, aqua: the first three
@@ -110,19 +110,34 @@ function Race() {
   const rows: Row[] = days.map((d) => {
     const row: Row = { date: d.date };
     for (const t of teams)
-      row[key(t.slot)] = view === "place" ? d.places[t.slot]!.order : d.places[t.slot]!.pts;
+      row[key(t.slot)] =
+        view === "place"
+          ? d.places[t.slot]!.order
+          : view === "points"
+            ? d.places[t.slot]!.pts
+            : d.places[t.slot]!.back;
     return row;
   });
   const byDate = new Map(days.map((d) => [d.date, d]));
   // The points scale runs to a round number above the leader
   const top = Math.ceil(Math.max(1, ...teams.map((t) => last.places[t.slot]!.pts)) / 20) * 20;
-  // On the points view, picked teams' names at the ends of their lines are nudged apart when
+  // The points-back scale, with the leader along the top, runs to a round number past the
+  // furthest any team has been behind
+  const maxBack = Math.max(1, ...days.flatMap((d) => Object.values(d.places).map((p) => p.back)));
+  const backStep = maxBack <= 20 ? 5 : 10;
+  const topBack = Math.ceil(maxBack / 5) * 5;
+  const backTicks = [...Array(Math.floor(topBack / backStep) + 1).keys()].map((i) => i * backStep);
+  // On the points views, picked teams' names at the ends of their lines are nudged apart when
   // their totals are close (about a line of text between them, on a plot about this tall)
   const plotHeight = narrow ? 350 : 410;
   const nudge = new Map<number, number>();
-  if (view === "points") {
+  if (view !== "place") {
     const ends = picked
-      .map((p) => ({ slot: p.slot, y: plotHeight * (1 - last.places[p.slot]!.pts / top) }))
+      .map((p) => {
+        const end = last.places[p.slot]!;
+        const y = view === "points" ? 1 - end.pts / top : end.back / topBack;
+        return { slot: p.slot, y: plotHeight * y };
+      })
       .sort((a, b) => a.y - b.y);
     let prev = -Infinity;
     for (const e of ends) {
@@ -146,13 +161,14 @@ function Race() {
         {fmtDate(dates[0]!)} to {fmtDate(last.date)} · {days.length} game day
         {days.length === 1 ? "" : "s"}
       </p>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
         <h1 className="text-5xl font-extrabold uppercase">The race</h1>
-        <div className="flex gap-2" role="group" aria-label="Show">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Show">
           {(
             [
               ["place", "Place"],
               ["points", "Points"],
+              ["back", "Points back"],
             ] as const
           ).map(([v, label]) => (
             <button
@@ -160,7 +176,7 @@ function Race() {
               type="button"
               onClick={() => setView(v)}
               aria-pressed={view === v}
-              className={`rounded-md border px-4 py-2 font-semibold ${
+              className={`rounded-md border px-3 py-2 font-semibold sm:px-4 ${
                 view === v ? "border-gold bg-gold text-accent-foreground" : "hover:bg-muted"
               }`}
             >
@@ -173,7 +189,7 @@ function Race() {
       <div
         className="h-[26rem] rounded-md border bg-card px-1 pb-2 pt-4 sm:h-[30rem] sm:px-3"
         role="img"
-        aria-label={`Each team's ${view === "place" ? "place in the standings" : "points"} on every game day from ${fmtDate(dates[0]!)} to ${fmtDate(last.date)}. The list below has today's standings.`}
+        aria-label={`Each team's ${view === "place" ? "place in the standings" : view === "points" ? "points" : "points behind the leader"} on every game day from ${fmtDate(dates[0]!)} to ${fmtDate(last.date)}. The list below has today's standings.`}
       >
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={rows} margin={{ top: 6, right: narrow ? 88 : 140, bottom: 0, left: 0 }}>
@@ -198,6 +214,18 @@ function Race() {
                 tickLine={false}
                 axisLine={false}
                 width={28}
+              />
+            ) : view === "back" ? (
+              <YAxis
+                reversed
+                domain={[0, topBack]}
+                ticks={backTicks}
+                interval={0}
+                allowDecimals={false}
+                tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }}
+                tickLine={false}
+                axisLine={false}
+                width={32}
               />
             ) : (
               <YAxis
@@ -235,7 +263,12 @@ function Race() {
                         />
                         <span className="font-semibold">{t.name}</span>
                         <span className="num ml-auto pl-3 text-muted-foreground">
-                          {placeName(day, t.slot, ord)} · {day.places[t.slot]!.pts} pts
+                          {placeName(day, t.slot, ord)} ·{" "}
+                          {view === "back"
+                            ? day.places[t.slot]!.back
+                              ? `${day.places[t.slot]!.back} back`
+                              : "leader"
+                            : `${day.places[t.slot]!.pts} pts`}
                         </span>
                       </div>
                     ))}
@@ -245,7 +278,7 @@ function Race() {
             />
             {drawOrder.map((t) => {
               const colour = colourOf.get(t.slot);
-              // On the points view only the picked-out teams are named: totals bunch up
+              // On the points views only the picked-out teams are named: totals bunch up
               const named = view === "place" || colour;
               return (
                 <Line

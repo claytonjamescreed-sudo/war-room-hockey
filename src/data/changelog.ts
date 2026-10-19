@@ -13,6 +13,25 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.9.0",
+    date: "2026-10-19",
+    title: "The race, by place",
+    changes: [
+      {
+        kind: "new",
+        text: "The Race is now one chart of every team's place in the pool, game day by game day, with each team's name and place at the end of its line. Switch to Points to see the totals instead.",
+      },
+      {
+        kind: "new",
+        text: "Tap up to 3 teams to pick them out in colour; the top 3 are picked to start. Hover or tap the chart for each picked team's place and points that day.",
+      },
+      {
+        kind: "new",
+        text: "Under the chart, today's standings with each team's best and worst place of the season.",
+      },
+    ],
+  },
+  {
     version: "1.8.0",
     date: "2026-10-15",
     title: "Last night for every player",

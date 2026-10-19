@@ -60,3 +60,22 @@ export function togglePick(picked: { slot: number; colour: number }[], slot: num
   const colour = [...Array(max).keys()].find((c) => !used.has(c)) ?? 0;
   return [...kept, { slot, colour }];
 }
+
+// Where the names at the ends of the lines go: each as close to its line's end as it can be, but
+// at least `gap` apart, between `top` and `bottom` (pixels). Labels on the same spot keep the
+// order they're given in. Too many for the space and they run past `top`, still `gap` apart.
+export function spreadLabels(
+  ends: { id: number; y: number }[],
+  gap: number,
+  top: number,
+  bottom: number,
+): Map<number, number> {
+  const sorted = ends.map((e, i) => ({ ...e, i })).sort((a, b) => a.y - b.y || a.i - b.i);
+  const ys = sorted.map((e) => Math.min(Math.max(e.y, top), bottom));
+  for (let i = 1; i < ys.length; i++) ys[i] = Math.max(ys[i]!, ys[i - 1]! + gap);
+  if (ys.length && ys[ys.length - 1]! > bottom) {
+    ys[ys.length - 1] = bottom;
+    for (let i = ys.length - 2; i >= 0; i--) ys[i] = Math.min(ys[i]!, ys[i + 1]! - gap);
+  }
+  return new Map(sorted.map((e, i) => [e.id, ys[i]!]));
+}

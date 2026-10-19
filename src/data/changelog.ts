@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.10.1",
+    date: "2026-10-19",
+    title: "Every name on the race",
+    changes: [
+      {
+        kind: "fixed",
+        text: "The Points and Points back views on the Race name every team at the end of its line, like Place does, with its total or how far back. Names spread apart where teams are close, with a short line back to their team.",
+      },
+    ],
+  },
+  {
     version: "1.10.0",
     date: "2026-10-19",
     title: "Points back on the race",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ord } from "./history";
-import { placeName, placeRange, racePlaces, togglePick } from "./race";
+import { placeName, placeRange, racePlaces, spreadLabels, togglePick } from "./race";
 
 const teams = [
   { slot: 1, name: "Aces" },
@@ -85,5 +85,56 @@ describe("togglePick", () => {
     p = togglePick(p, 11);
     expect(p.map((x) => x.slot)).toEqual([9, 3, 11]);
     expect(p).toContainEqual({ slot: 11, colour: 0 });
+  });
+});
+
+describe("spreadLabels", () => {
+  const ys = (m: Map<number, number>) =>
+    [...m.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1]);
+
+  it("leaves labels that are far enough apart where they are", () => {
+    expect(
+      ys(
+        spreadLabels(
+          [
+            { id: 1, y: 10 },
+            { id: 2, y: 50 },
+            { id: 3, y: 90 },
+          ],
+          14,
+          0,
+          200,
+        ),
+      ),
+    ).toEqual([10, 50, 90]);
+  });
+
+  it("pushes bunched labels apart, in order, keeping same-spot labels in the order given", () => {
+    const laid = spreadLabels(
+      [
+        { id: 1, y: 100 },
+        { id: 2, y: 100 },
+        { id: 3, y: 105 },
+        { id: 4, y: 40 },
+      ],
+      14,
+      0,
+      300,
+    );
+    expect(ys(laid)).toEqual([100, 114, 128, 40]);
+  });
+
+  it("pulls labels back up when they would run off the bottom", () => {
+    const laid = spreadLabels(
+      [
+        { id: 1, y: 190 },
+        { id: 2, y: 195 },
+        { id: 3, y: 200 },
+      ],
+      14,
+      0,
+      200,
+    );
+    expect(ys(laid)).toEqual([172, 186, 200]);
   });
 });

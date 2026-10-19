@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
-  LabelList,
+  Customized,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { TeamLogo } from "@/components/team-logo";
 import { lockerSearch, ord } from "@/lib/history";
-import { placeName, placeRange, racePlaces, togglePick } from "@/lib/race";
+import { placeName, placeRange, racePlaces, spreadLabels, togglePick } from "@/lib/race";
 import { fmtDate, seasonQuery } from "@/lib/season-query";
 
 export const Route = createFileRoute("/race")({
@@ -127,28 +127,73 @@ function Race() {
   const backStep = maxBack <= 20 ? 5 : 10;
   const topBack = Math.ceil(maxBack / 5) * 5;
   const backTicks = [...Array(Math.floor(topBack / backStep) + 1).keys()].map((i) => i * backStep);
-  // On the points views, picked teams' names at the ends of their lines are nudged apart when
-  // their totals are close (about a line of text between them, on a plot about this tall)
-  const plotHeight = narrow ? 350 : 410;
-  const nudge = new Map<number, number>();
-  if (view !== "place") {
-    const ends = picked
-      .map((p) => {
-        const end = last.places[p.slot]!;
-        const y = view === "points" ? 1 - end.pts / top : end.back / topBack;
-        return { slot: p.slot, y: plotHeight * y };
-      })
-      .sort((a, b) => a.y - b.y);
-    let prev = -Infinity;
-    for (const e of ends) {
-      const y = Math.max(e.y, prev + 15);
-      nudge.set(e.slot, y - e.y);
-      prev = y;
-    }
-  }
-  const short = (name: string) => {
-    const max = narrow ? 11 : 18;
-    return name.length > max ? `${name.slice(0, max - 1)}…` : name;
+  const short = (name: string, max: number) =>
+    name.length > max ? `${name.slice(0, max - 1)}…` : name;
+  // What each line's end says: its place, total or points back, then the team
+  const endValue = (slot: number) => {
+    const p = last.places[slot]!;
+    return view === "place" ? p.order : view === "points" ? p.pts : p.back;
+  };
+  const endLabel = (slot: number, name: string) => {
+    const p = last.places[slot]!;
+    const lead =
+      view === "place"
+        ? placeName(last, slot, ord)
+        : view === "points"
+          ? String(p.pts)
+          : p.back
+            ? `−${p.back}`
+            : "0";
+    return `${lead} ${short(name, narrow ? 10 : 18)}`;
+  };
+  // Every team's name at the end of its line, spread apart where the lines end close together,
+  // with a short line back to the end when a name had to move. Drawn on the chart's own scales.
+  const fontSize = narrow ? 11 : 12.5;
+  type Scale = ((v: unknown) => number) & { bandwidth?: () => number };
+  type ChartState = {
+    xAxisMap?: Record<string, { scale: Scale }>;
+    yAxisMap?: Record<string, { scale: Scale }>;
+    offset?: { top: number; height: number };
+  };
+  const EndLabels = (chart: ChartState) => {
+    const xScale = Object.values(chart.xAxisMap ?? {})[0]?.scale;
+    const yScale = Object.values(chart.yAxisMap ?? {})[0]?.scale;
+    const box = chart.offset;
+    if (!xScale || !yScale || !box) return null;
+    const x = xScale(last.date) + (xScale.bandwidth?.() ?? 0) / 2;
+    const ends = ordered.map((t) => ({ id: t.slot, y: yScale(endValue(t.slot)) }));
+    const laid = spreadLabels(ends, fontSize + 2.5, box.top + fontSize / 2, box.top + box.height);
+    return (
+      <g>
+        {ordered.map((t, i) => {
+          const y0 = ends[i]!.y;
+          const y = laid.get(t.slot) ?? y0;
+          const moved = Math.abs(y - y0) > 1.5;
+          const colour = colourOf.get(t.slot);
+          return (
+            <g key={t.slot} style={{ cursor: "pointer" }} onClick={() => pick(t.slot)}>
+              {moved && (
+                <polyline
+                  points={`${x + 2},${y0} ${x + 6},${y} ${x + 8},${y}`}
+                  fill="none"
+                  stroke="var(--color-muted-foreground)"
+                  strokeOpacity={0.5}
+                />
+              )}
+              <text
+                x={x + 10}
+                y={y + fontSize / 3}
+                fontSize={fontSize}
+                fontWeight={colour ? 700 : 500}
+                fill={colour ? "var(--color-foreground)" : "var(--color-muted-foreground)"}
+              >
+                {endLabel(t.slot, t.name)}
+              </text>
+            </g>
+          );
+        })}
+      </g>
+    );
   };
   // Picked teams last, so their lines sit on top
   const drawOrder = [...ordered].sort(
@@ -278,8 +323,6 @@ function Race() {
             />
             {drawOrder.map((t) => {
               const colour = colourOf.get(t.slot);
-              // On the points views only the picked-out teams are named: totals bunch up
-              const named = view === "place" || colour;
               return (
                 <Line
                   key={t.slot}
@@ -293,33 +336,10 @@ function Race() {
                   isAnimationActive={false}
                   onClick={() => pick(t.slot)}
                   style={{ cursor: "pointer" }}
-                >
-                  {named && (
-                    <LabelList
-                      dataKey={key(t.slot)}
-                      content={({ x, y, index }) =>
-                        index === rows.length - 1 ? (
-                          <text
-                            x={Number(x) + 8}
-                            y={Number(y) + 4 + (nudge.get(t.slot) ?? 0)}
-                            fontSize={narrow ? 11 : 12.5}
-                            fontWeight={colour ? 700 : 500}
-                            fill={
-                              colour ? "var(--color-foreground)" : "var(--color-muted-foreground)"
-                            }
-                            style={{ cursor: "pointer" }}
-                            onClick={() => pick(t.slot)}
-                          >
-                            {view === "place" ? `${placeName(last, t.slot, ord)} ` : ""}
-                            {short(t.name)}
-                          </text>
-                        ) : null
-                      }
-                    />
-                  )}
-                </Line>
+                />
               );
             })}
+            <Customized component={EndLabels} />
           </LineChart>
         </ResponsiveContainer>
       </div>

@@ -232,7 +232,7 @@ function Race() {
       </div>
 
       <div
-        className="h-[26rem] rounded-md border bg-card px-1 pb-2 pt-4 sm:h-[30rem] sm:px-3"
+        className="h-[38rem] rounded-md border bg-card px-1 pb-2 pt-4 sm:h-[30rem] sm:px-3"
         role="img"
         aria-label={`Each team's ${view === "place" ? "place in the standings" : view === "points" ? "points" : "points behind the leader"} on every game day from ${fmtDate(dates[0]!)} to ${fmtDate(last.date)}. The list below has today's standings.`}
       >
@@ -252,7 +252,7 @@ function Race() {
               <YAxis
                 reversed
                 domain={[1, n]}
-                ticks={[...Array(n).keys()].map((i) => i + 1).filter((p) => !narrow || p % 2 === 1)}
+                ticks={[...Array(n).keys()].map((i) => i + 1)}
                 interval={0}
                 allowDecimals={false}
                 tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }}

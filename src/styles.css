@@ -146,6 +146,231 @@
     font-family: var(--font-sans);
     font-size: 1.0625rem;
   }
-  h1, h2, h3 { font-family: var(--font-display); letter-spacing: 0.01em; }
-  .num { font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
+  }
+  .num {
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* The moving rink behind every page (components/rink-backdrop.tsx), from the Chipp rebuild.
+   Light mode by default; .dark below turns it up for the dark canvas. Every animation moves only
+   transform or opacity, so it is composited without repainting. */
+.rink-bg {
+  --rb-gold: var(--gold);
+  --rb-red: var(--red);
+  --rb-blue: #1565c0;
+  --rb-line: #8a857c;
+  /* How strong each layer is. Light mode: colour washes out on the pale canvas, so the lines and
+     pucks carry it, like markings seen through clean ice. Still well behind the text. */
+  --rb-glow: 0.1;
+  --rb-lines: 0.13;
+  --rb-shine: 0.1;
+  --rb-puck: 0.3;
+  --rb-spark: 0.35;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+  /* Its own compositor layer: scrolling the page never repaints it */
+  will-change: transform;
+}
+.dark .rink-bg {
+  /* Dark mode: the lights glow on the dark canvas */
+  --rb-blue: #5aa9ff;
+  --rb-line: #807c74;
+  --rb-glow: 0.09;
+  --rb-lines: 0.08;
+  --rb-shine: 0.12;
+  --rb-puck: 0.4;
+  --rb-spark: 0.45;
+}
+
+/* Arena lights: big soft colour pools drifting slowly */
+.rink-bg .glow {
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  opacity: var(--rb-glow);
+  will-change: transform;
+  animation: rb-drift 46s ease-in-out infinite alternate;
+}
+.rink-bg .glow-gold {
+  left: -25vmax;
+  top: -30vmax;
+  background: radial-gradient(closest-side, var(--rb-gold), transparent);
+}
+.rink-bg .glow-blue {
+  right: -30vmax;
+  top: 20vh;
+  background: radial-gradient(closest-side, var(--rb-blue), transparent);
+  animation-duration: 58s;
+  animation-direction: alternate-reverse;
+}
+.rink-bg .glow-red {
+  left: 10vw;
+  bottom: -40vmax;
+  background: radial-gradient(closest-side, var(--rb-red), transparent);
+  animation-duration: 64s;
+}
+
+/* Rink markings */
+.rink-bg .markings {
+  position: absolute;
+  inset: 4vmin;
+  opacity: var(--rb-lines);
+}
+.rink-bg .rink {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.rink-bg .rink.tall {
+  display: none;
+}
+@media (orientation: portrait) {
+  .rink-bg .rink.wide {
+    display: none;
+  }
+  .rink-bg .rink.tall {
+    display: block;
+  }
+}
+.rink-bg .line {
+  fill: none;
+  stroke: var(--rb-line);
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+}
+.rink-bg .line.red {
+  stroke: var(--rb-red);
+}
+.rink-bg .line.blue {
+  stroke: var(--rb-blue);
+}
+.rink-bg .markings.shine {
+  opacity: 0;
+  animation: rb-shine 12s ease-in-out infinite;
+}
+.rink-bg .shine .line {
+  stroke-width: 6px;
+  stroke-opacity: 0.35;
+}
+
+/* Pucks: a dark disc with a fading trail; a soft shadow on the pale ice, a gold halo on the dark */
+.rink-bg .lane {
+  position: absolute;
+  left: -30vw;
+  width: 160vw;
+  height: 0;
+}
+.rink-bg .puck {
+  position: absolute;
+  left: 0;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #15130f;
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--rb-blue) 45%, transparent),
+    0 2px 8px 1px color-mix(in srgb, #15130f 30%, transparent);
+  opacity: var(--rb-puck);
+  will-change: transform;
+  animation: rb-glide 24s linear infinite;
+}
+.dark .rink-bg .puck {
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--rb-gold) 70%, transparent),
+    0 0 10px 2px color-mix(in srgb, var(--rb-gold) 35%, transparent);
+}
+.rink-bg .puck::before {
+  content: "";
+  position: absolute;
+  right: 7px;
+  top: 4px;
+  width: 160px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--rb-blue) 40%, transparent),
+    transparent
+  );
+}
+
+/* Ice sparkles */
+.rink-bg .sparkle {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--rb-blue);
+  box-shadow: 0 0 6px 1px color-mix(in srgb, var(--rb-blue) 60%, transparent);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: rb-twinkle 7s ease-in-out infinite;
+}
+.dark .rink-bg .sparkle {
+  background: #fbfaf6;
+}
+
+@keyframes rb-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(12vw, 8vh, 0) scale(1.15);
+  }
+}
+@keyframes rb-shine {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: var(--rb-shine);
+  }
+}
+@keyframes rb-glide {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(160vw, 0, 0);
+  }
+}
+@keyframes rb-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  50% {
+    opacity: var(--rb-spark);
+    transform: scale(1);
+  }
+}
+
+/* Reduce motion: the same picture, standing still */
+@media (prefers-reduced-motion: reduce) {
+  .rink-bg .glow,
+  .rink-bg .markings.shine,
+  .rink-bg .puck,
+  .rink-bg .sparkle {
+    animation: none;
+  }
+  .rink-bg .sparkle {
+    opacity: calc(var(--rb-spark) * 0.5);
+  }
+  .rink-bg .puck {
+    transform: translate3d(60vw, 0, 0);
+  }
 }

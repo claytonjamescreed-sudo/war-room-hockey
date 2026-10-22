@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
+import { RinkBackdrop } from "@/components/rink-backdrop";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { UpdateNotice } from "@/components/update-notice";
 import appCss from "../styles.css?url";
@@ -162,9 +163,13 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       {/* First, so that on phones its bar sits above the header */}
       <UpdateNotice />
+      {/* The moving rink behind the page; the page paints over it (positioned, after it) */}
+      {!bare && <RinkBackdrop />}
       {!bare && <SiteHeader />}
-      <Outlet />
-      {!bare && <SiteFooter />}
+      <div className="relative">
+        <Outlet />
+        {!bare && <SiteFooter />}
+      </div>
     </QueryClientProvider>
   );
 }

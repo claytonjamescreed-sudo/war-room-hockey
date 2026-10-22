@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.11.0",
+    date: "2026-10-21",
+    title: "Game on the ice",
+    changes: [
+      {
+        kind: "new",
+        text: "A moving rink behind every page: faint rink markings that glow, pucks gliding across with a light trail, slow arena lights and a few ice sparkles. It stays well behind the standings, and stands still if your phone is set to reduce motion.",
+      },
+    ],
+  },
+  {
     version: "1.10.3",
     date: "2026-10-19",
     title: "A taller race on computers too",

@@ -163,8 +163,9 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       {/* First, so that on phones its bar sits above the header */}
       <UpdateNotice />
-      {/* The moving rink behind the page; the page paints over it (positioned, after it) */}
-      {!bare && <RinkBackdrop />}
+      {/* The moving rink behind every page, the TV board too; the page paints over it
+          (positioned, after it) */}
+      <RinkBackdrop />
       {!bare && <SiteHeader />}
       <div className="relative">
         <Outlet />

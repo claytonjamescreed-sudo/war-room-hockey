@@ -118,7 +118,9 @@ function TvBoard() {
   else if (!draft.data) body = <p className="p-10 text-3xl">No draft has been set up yet.</p>;
   else body = <Board draft={draft.data} players={players.data} />;
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    // No background of its own: the page's dark canvas and the moving rink show through between
+    // the panels
+    <div className="min-h-screen text-foreground">
       {body}
       <Toaster theme="dark" position="bottom-center" richColors />
     </div>

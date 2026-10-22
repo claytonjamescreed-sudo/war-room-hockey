@@ -13,6 +13,17 @@ export type Release = {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.11.1",
+    date: "2026-10-21",
+    title: "The rink on the TV board",
+    changes: [
+      {
+        kind: "improved",
+        text: "The moving rink is behind the TV board too, so draft night gets the same ice as the rest of the site.",
+      },
+    ],
+  },
+  {
     version: "1.11.0",
     date: "2026-10-21",
     title: "Game on the ice",
